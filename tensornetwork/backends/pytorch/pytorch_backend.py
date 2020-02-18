@@ -78,6 +78,9 @@ class PyTorchBackend(base_backend.BaseBackend):
   def shape_tuple(self, tensor: Tensor) -> Tuple[Optional[int], ...]:
     return tuple(tensor.shape)
 
+  def sparse_shape(self, tensor: Tensor) -> Tuple[Optional[int], ...]:
+    return self.shape_tuple(tensor)
+
   def shape_prod(self, values: Tensor) -> int:
     return np.prod(np.array(values))
 
@@ -156,16 +159,16 @@ class PyTorchBackend(base_backend.BaseBackend):
     raise NotImplementedError("Backend '{}' has not implemented eigs.".format(
         self.name))
 
-  def eigsh_lanczos(self,
-                    A: Callable,
-                    initial_state: Optional[Tensor] = None,
-                    num_krylov_vecs: Optional[int] = 200,
-                    numeig: Optional[int] = 1,
-                    tol: Optional[float] = 1E-8,
-                    delta: Optional[float] = 1E-8,
-                    ndiag: Optional[int] = 20,
-                    reorthogonalize: Optional[bool] = False
-                   ) -> Tuple[List, List]:
+  def eigsh_lanczos(
+      self,
+      A: Callable,
+      initial_state: Optional[Tensor] = None,
+      num_krylov_vecs: Optional[int] = 200,
+      numeig: Optional[int] = 1,
+      tol: Optional[float] = 1E-8,
+      delta: Optional[float] = 1E-8,
+      ndiag: Optional[int] = 20,
+      reorthogonalize: Optional[bool] = False) -> Tuple[List, List]:
     """
     Lanczos method for finding the lowest eigenvector-eigenvalue pairs
     of a `LinearOperator` `A`.
@@ -249,7 +252,7 @@ class PyTorchBackend(base_backend.BaseBackend):
             self.torch.tensor(diag_elements)) + self.torch.diag(
                 self.torch.tensor(norms_vector_n[1:]), 1) + self.torch.diag(
                     self.torch.tensor(norms_vector_n[1:]), -1)
-        eigvals, u = A_tridiag.symeig()
+        eigvals, u = A_tridiag.symeig(eigenvectors=True)
         if not first:
           if self.torch.norm(eigvals[0:numeig] - eigvalsold[0:numeig]) < tol:
             break
@@ -266,7 +269,7 @@ class PyTorchBackend(base_backend.BaseBackend):
         self.torch.tensor(diag_elements)) + self.torch.diag(
             self.torch.tensor(norms_vector_n[1:]), 1) + self.torch.diag(
                 self.torch.tensor(norms_vector_n[1:]), -1)
-    eigvals, u = A_tridiag.symeig()
+    eigvals, u = A_tridiag.symeig(eigenvectors=True)
     eigenvectors = []
     for n2 in range(min(numeig, len(eigvals))):
       state = self.zeros(initial_state.shape, initial_state.dtype)
