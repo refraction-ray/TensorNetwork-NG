@@ -597,6 +597,13 @@ class Z2Charge(BaseCharge):
 
 
 def ZNCharge(n: int) -> Callable:
+  """Factory constructor for a ModularCharge object
+
+  Args:
+    n: The `n` modual of the ZN symmetry.
+  Returns:
+    ModularCharge object with the modulo set to `n`
+  """
   if n < 2:
     raise ValueError(f"n must be >= 2, found {n}")
 
