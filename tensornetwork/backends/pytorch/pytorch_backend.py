@@ -176,7 +176,8 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         return tensor  # pytorch does not support complex dtypes
 
     def eigh(self, matrix: Tensor) -> Tuple[Tensor, Tensor]:
-        return matrix.symeig(eigenvectors=True)
+        return torchlib.linalg.eigh(matrix)
+        # return matrix.symeig(eigenvectors=True)
 
     def eigsh_lanczos(
         self,
@@ -286,7 +287,8 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
                     + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), 1)
                     + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), -1)
                 )
-                eigvals, u = A_tridiag.symeig(eigenvectors=True)
+                # eigvals, u = A_tridiag.symeig(eigenvectors=True)
+                eigvals, u = torchlib.linalg.eigh(A_tridiag)
                 if not first:
                     if torchlib.norm(eigvals[0:numeig] - eigvalsold[0:numeig]) < tol:
                         break
@@ -304,7 +306,8 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
             + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), 1)
             + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), -1)
         )
-        eigvals, u = A_tridiag.symeig(eigenvectors=True)
+        # eigvals, u = A_tridiag.symeig(eigenvectors=True)
+        eigvals, u = torchlib.linalg.eigh(A_tridiag)
         eigenvectors = []
         for n2 in range(min(numeig, len(eigvals))):
             state = self.zeros(initial_state.shape, initial_state.dtype)

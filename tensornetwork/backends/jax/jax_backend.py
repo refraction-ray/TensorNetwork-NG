@@ -754,6 +754,7 @@ class JaxBackend(abstract_backend.AbstractBackend):
             maxiter,
             self.jax_precision,
         )
+
         if converged:
             info = 0
         else:
@@ -780,7 +781,8 @@ class JaxBackend(abstract_backend.AbstractBackend):
         return tensor1 / tensor2
 
     def index_update(self, tensor: Tensor, mask: Tensor, assignee: Tensor) -> Tensor:
-        return libjax.ops.index_update(tensor, mask, assignee)
+        # return libjax.ops.index_update(tensor, mask, assignee)
+        return tensor.at[mask].set(assignee)
 
     def inv(self, matrix: Tensor) -> Tensor:
         if len(matrix.shape) > 2:

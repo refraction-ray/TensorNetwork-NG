@@ -16,8 +16,7 @@ import tensornetwork as tn
 import pytest
 import numpy as np
 from tensornetwork.backends.abstract_backend import AbstractBackend
-import tensornetwork.linalg
-import tensornetwork.linalg.node_linalg
+from tensornetwork.matrixproductstates.utils import conj
 
 
 def test_replicate_nodes(backend):
@@ -199,7 +198,7 @@ def test_split_node_rq_unitarity_complex(backend):
     a = tn.Node(np.random.rand(3, 3) + 1j * np.random.rand(3, 3), backend=backend)
     r, q = tn.split_node_rq(a, [a[0]], [a[1]])
     r[1] | q[0]
-    qbar = tn.linalg.node_linalg.conj(q)
+    qbar = conj(q)
     q[1] ^ qbar[1]
     u1 = q @ qbar
     qbar[0] ^ q[0]
@@ -213,7 +212,7 @@ def test_split_node_rq_unitarity_float(backend):
     a = tn.Node(np.random.rand(3, 3), backend=backend)
     r, q = tn.split_node_rq(a, [a[0]], [a[1]])
     r[1] | q[0]
-    qbar = tn.linalg.node_linalg.conj(q)
+    qbar = conj(q)
     q[1] ^ qbar[1]
     u1 = q @ qbar
     qbar[0] ^ q[0]
@@ -245,7 +244,7 @@ def test_split_node_qr_unitarity_complex(backend):
     a = tn.Node(np.random.rand(3, 3) + 1j * np.random.rand(3, 3), backend=backend)
     q, r = tn.split_node_qr(a, [a[0]], [a[1]])
     q[1] | r[0]
-    qbar = tn.linalg.node_linalg.conj(q)
+    qbar = conj(q)
     q[1] ^ qbar[1]
     u1 = q @ qbar
     qbar[0] ^ q[0]
@@ -259,7 +258,7 @@ def test_split_node_qr_unitarity_float(backend):
     a = tn.Node(np.random.rand(3, 3), backend=backend)
     q, r = tn.split_node_qr(a, [a[0]], [a[1]])
     q[1] | r[0]
-    qbar = tn.linalg.node_linalg.conj(q)
+    qbar = conj(q)
     q[1] ^ qbar[1]
     u1 = q @ qbar
     qbar[0] ^ q[0]

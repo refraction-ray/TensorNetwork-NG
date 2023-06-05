@@ -83,7 +83,8 @@ class BaseDMRG:
             )
         if self.right_envs[len(mps) - 1].dtype != self.dtype:
             raise TypeError(
-                "right_boundary.dtype = {} is different from BaseDMRG.dtype = {}".format(
+                "right_boundary.dtype = {} is different\
+                     from BaseDMRG.dtype = {}".format(
                     self.right_envs[0].dtype, self.dtype
                 )
             )

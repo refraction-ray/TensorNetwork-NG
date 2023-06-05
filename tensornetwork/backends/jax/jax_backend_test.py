@@ -19,8 +19,8 @@ import jax
 import jax.numpy as jnp
 import pytest
 from tensornetwork.backends.jax import jax_backend
-import jax.config as config
-import tensornetwork.backends.jax.jitted_functions as jitted_functions
+from jax.config import config
+from tensornetwork.backends.jax import jitted_functions
 
 # pylint: disable=no-member
 config.update("jax_enable_x64", True)
@@ -302,16 +302,6 @@ def test_conj():
     np.testing.assert_allclose(expected, actual)
 
 
-@pytest.mark.parametrize("dtype", np_randn_dtypes)
-def index_update(dtype):
-    backend = jax_backend.JaxBackend()
-    tensor = backend.randn((4, 2, 3), dtype=dtype, seed=10)
-    out = backend.index_update(tensor, tensor > 0.1, 0.0)
-    tensor = np.array(tensor)
-    tensor[tensor > 0.1] = 0.0
-    np.testing.assert_allclose(tensor, out)
-
-
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 def test_eigsh_valid_init_operator_with_shape(dtype):
     backend = jax_backend.JaxBackend()
@@ -459,10 +449,11 @@ def test_eigsh_lanczos_raises():
 
 @pytest.mark.parametrize("dtype", np_dtypes)
 def test_index_update(dtype):
+    # TODO(@refraction-ray): look into float16 fail
     backend = jax_backend.JaxBackend()
     tensor = backend.randn((4, 2, 3), dtype=dtype, seed=10)
     out = backend.index_update(tensor, tensor > 0.1, 0.0)
-    np_tensor = np.array(tensor)
+    np_tensor = np.array(tensor, dtype=dtype)
     np_tensor[np_tensor > 0.1] = 0.0
     np.testing.assert_allclose(out, np_tensor)
 
@@ -1058,7 +1049,7 @@ def test_eigs_eigsh_raises(solver, whichs):
 
 def test_eigs_dtype_raises():
     solver = jax_backend.JaxBackend().eigs
-    with pytest.raises(TypeError, match="dtype"):
+    with pytest.raises(TypeError, match="type"):
         solver(lambda x: x, shape=(10,), dtype=np.int32, num_krylov_vecs=10)
 
 
