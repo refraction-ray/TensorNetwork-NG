@@ -16,7 +16,7 @@ import h5py
 import numpy as np
 
 from tensornetwork.component_factory import get_component
-import tensornetwork.network_components as network_components
+from tensornetwork import network_components
 from tensornetwork.network_components import Edge, AbstractNode, Node
 from tensornetwork.network_operations import reachable, get_all_edges
 from typing import List, Union, BinaryIO
@@ -85,10 +85,10 @@ def save_nodes(nodes: List[AbstractNode], path: Union[str, BinaryIO]) -> None:
 
     # name edges and nodes back  to their original names
     for n, node in enumerate(nodes):
-        nodes[n].set_name(old_node_names[n])
+        node.set_name(old_node_names[n])
 
     for n, edge in enumerate(edges):
-        edges[n].set_name(old_edge_names[n])
+        edge.set_name(old_edge_names[n])
 
 
 def load_nodes(path: str) -> List[AbstractNode]:
@@ -106,14 +106,18 @@ def load_nodes(path: str) -> List[AbstractNode]:
         node_names = {
             "node{}".format(n): v
             for n, v in enumerate(
-                net_file["node_names"]["names"].asstr(STRING_ENCODING)[()]
-            )  # pylint: disable=no-member
+                net_file["node_names"]["names"].asstr(  # pylint: disable=no-member
+                    STRING_ENCODING
+                )[()]
+            )
         }
         edge_names = {
             "edge{}".format(n): v
             for n, v in enumerate(
-                net_file["edge_names"]["names"].asstr(STRING_ENCODING)[()]
-            )  # pylint: disable=no-member
+                net_file["edge_names"]["names"].asstr(  # pylint: disable=no-member
+                    STRING_ENCODING
+                )[()]
+            )
         }
         edges = list(net_file["edges"].keys())
         for node_name in nodes:

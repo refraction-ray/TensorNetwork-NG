@@ -1,6 +1,6 @@
 <img src="https://user-images.githubusercontent.com/8702042/67589472-5a1d0e80-f70d-11e9-8812-64647814ae96.png" width="60%" height="60%">
 
-[![Build Status](https://travis-ci.org/google/TensorNetwork.svg?branch=master)](https://travis-ci.org/google/TensorNetwork)
+To make the upstream of [TensorCircuit] more robust and survive the breaking API changes from Python to Jax, this fork version of TensorNetwork will be further maintained (still at very early development stage).
 
 
 A tensor network wrapper for TensorFlow, JAX, PyTorch, and Numpy.

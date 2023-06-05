@@ -25,7 +25,7 @@ from tensornetwork.block_sparse.linalg import (
     reshape,
     transpose,
     norm,
-    abs,
+    abs,  # pylint: disable=redefined-builtin
     sign,
 )
 

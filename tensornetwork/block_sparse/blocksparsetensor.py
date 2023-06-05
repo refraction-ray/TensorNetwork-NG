@@ -842,7 +842,8 @@ class BlockSparseTensor(ChargeArray):
     def __rmul__(self, number: np.number) -> "BlockSparseTensor":
         if not np.isscalar(number):
             raise TypeError(
-                "Can only right-multiply BlockSparseTensor by a number. Found type {}".format(
+                "Can only right-multiply BlockSparseTensor\
+                     by a number. Found type {}".format(
                     type(number)
                 )
             )
@@ -873,7 +874,8 @@ class BlockSparseTensor(ChargeArray):
     def __pow__(self, number: np.number) -> "BlockSparseTensor":
         if not np.isscalar(number):
             raise TypeError(
-                "Can only exponentiate BlockSparseTensor by a number. Found type {}".format(
+                "Can only exponentiate BlockSparseTensor\
+                     by a number. Found type {}".format(
                     type(number)
                 )
             )

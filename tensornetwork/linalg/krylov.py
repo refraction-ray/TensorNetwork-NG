@@ -14,7 +14,7 @@
 from typing import Optional, Tuple, Any, Union, Type, Callable, List, Text
 import numpy as np
 import tensornetwork.tensor
-import tensornetwork.backends.abstract_backend as abstract_backend
+from tensornetwork.backends import abstract_backend
 from tensornetwork import backends
 
 AbstractBackend = abstract_backend.AbstractBackend

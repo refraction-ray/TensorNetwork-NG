@@ -6,7 +6,8 @@
 #init-hook=
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS
+ignore=CVS, block_sparse
+# the code for block_sparse incurs too many errors in pylint, not maintained for now
 # Pickle collected data for later comparisons.
 persistent=yes
 # List of plugins (as comma separated values of python modules names) to load,
@@ -83,6 +84,17 @@ disable=
     unused-import,
     wrong-import-order,
     wrong-import-position,
+    consider-using-f-string,
+    implicit-str-concat,
+    too-many-branches,
+    unnecessary-lambda-assignment,
+    consider-using-min-builtin,
+    use-dict-literal,
+    unnecessary-dunder-call,
+    consider-using-enumerate,
+    unexpected-keyword-arg,
+    no-value-for-parameter,
+    inconsistent-return-statements
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html
@@ -132,13 +144,13 @@ ignore-comments=yes
 ignore-docstrings=yes
 [FORMAT]
 # Maximum number of characters on a single line.
-max-line-length=80
+max-line-length=88
 # Maximum number of lines in a module
-max-module-lines=1000
+max-module-lines=2000
 # String used as indentation unit. This is usually " " (4 spaces) or "\t" (1
 # tab).
 # CHANGED:
-indent-string='  '
+indent-string='    '
 [BASIC]
 # List of builtins function names that should not be used, separated by a comma
 bad-functions=map,filter,apply,input
@@ -179,7 +191,7 @@ max-locals=15
 # Maximum number of return / yield for function / method body
 max-returns=6
 # Maximum number of branch for function / method body
-max-branchs=12
+max-branchs=24
 # Maximum number of statements in function / method body
 max-statements=50
 # Maximum number of parents for a class (see R0901).

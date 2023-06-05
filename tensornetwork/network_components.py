@@ -2213,8 +2213,10 @@ def contract_between(
                     node2_output_axes.append(i)
                 else:
                     raise ValueError(
-                        "Edge '{}' in output_edge_order is not connected to node '{}' or "
-                        "node '{}'".format(edge, node1, node2)
+                        "Edge '{}' in output_edge_order is not\
+                            connected to node '{}' or node '{}'".format(
+                            edge, node1, node2
+                        )
                     )
             if (
                 node1_output_axes

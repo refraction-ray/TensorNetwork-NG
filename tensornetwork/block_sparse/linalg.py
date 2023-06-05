@@ -761,20 +761,18 @@ def pinv(
             ).T
         )
     # pylint: disable=line-too-long
-    return BlockSparseTensor(
+    return BlockSparseTensor(  # pytype: disable=bad-return-type
         data=data,
         charges=matrix._charges,
         flows=np.logical_not(matrix._flows),
         order=matrix._order,
         check_consistency=False,
-    ).transpose(
-        (1, 0)
-    )  # pytype: disable=bad-return-type
+    ).transpose((1, 0))
 
 
-def abs(
+def abs(  # pylint: disable=redefined-builtin
     tensor: BlockSparseTensor,
-) -> BlockSparseTensor:  # pylint: disable=redefined-builtin
+) -> BlockSparseTensor:
     result = empty_like(tensor)
     result.data = np.abs(tensor.data)
     return result
