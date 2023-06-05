@@ -14,17 +14,17 @@
 
 
 class _DefaultNodeCollectionStack:
-  """A stack to keep track of contexts that were entered."""
+    """A stack to keep track of contexts that were entered."""
 
-  def __init__(self):
-    self.stack = []
+    def __init__(self):
+        self.stack = []
 
-  def get_current_item(self):
-    return self.stack[-1] if self.stack else None
+    def get_current_item(self):
+        return self.stack[-1] if self.stack else None
 
 
 _default_collection_stack = _DefaultNodeCollectionStack()
 
 
 def get_current_collection():
-  return _default_collection_stack.get_current_item()
+    return _default_collection_stack.get_current_item()

@@ -20,38 +20,38 @@ from tensornetwork import network_components
 
 def bucket(
     nodes: Iterable[AbstractNode],
-    contraction_order: Sequence[network_components.CopyNode]
+    contraction_order: Sequence[network_components.CopyNode],
 ) -> Iterable[AbstractNode]:
-  """Contract given nodes exploiting copy tensors.
+    """Contract given nodes exploiting copy tensors.
 
-  This is based on the Bucket-Elimination-based algorithm described in
-  `arXiv:quant-ph/1712.05384`_, but avoids explicit construction of the 
-  graphical model. Instead, it achieves the efficient contraction of sparse 
-  tensors by representing them as subnetworks consisting of lower rank tensors
-  and copy tensors. This function assumes that sparse tensors have already been
-  decomposed this way by the caller.
+    This is based on the Bucket-Elimination-based algorithm described in
+    `arXiv:quant-ph/1712.05384`_, but avoids explicit construction of the
+    graphical model. Instead, it achieves the efficient contraction of sparse
+    tensors by representing them as subnetworks consisting of lower rank tensors
+    and copy tensors. This function assumes that sparse tensors have already been
+    decomposed this way by the caller.
 
-  This contractor is efficient on networks with many copy tensors. Time and
-  memory requirements are highly sensitive to the requested contraction order.
+    This contractor is efficient on networks with many copy tensors. Time and
+    memory requirements are highly sensitive to the requested contraction order.
 
-  Note that the returned tensor network may not be fully contracted if the input
-  network doesn't have enough copy nodes. In this case, the client should use
-  a different contractor to complete the contraction.
+    Note that the returned tensor network may not be fully contracted if the input
+    network doesn't have enough copy nodes. In this case, the client should use
+    a different contractor to complete the contraction.
 
-  .. _arXiv:quant-ph/1712.05384:
-    https://arxiv.org/abs/1712.05384
+    .. _arXiv:quant-ph/1712.05384:
+      https://arxiv.org/abs/1712.05384
 
-  Args:
-    nodes: A collection of connected nodes.
-    contraction_order: Order in which copy tensors are contracted.
+    Args:
+      nodes: A collection of connected nodes.
+      contraction_order: Order in which copy tensors are contracted.
 
-  Returns:
-    A new iterable of nodes after contracting copy tensors.
-  """
-  nodes = set(nodes)
-  for copy_node in contraction_order:
-    partners = copy_node.get_partners()
-    new_node = contract_copy_node(copy_node)
-    nodes = nodes.difference(list(partners.keys()) + [copy_node])
-    nodes.add(new_node)
-  return nodes
+    Returns:
+      A new iterable of nodes after contracting copy tensors.
+    """
+    nodes = set(nodes)
+    for copy_node in contraction_order:
+        partners = copy_node.get_partners()
+        new_node = contract_copy_node(copy_node)
+        nodes = nodes.difference(list(partners.keys()) + [copy_node])
+        nodes.add(new_node)
+    return nodes

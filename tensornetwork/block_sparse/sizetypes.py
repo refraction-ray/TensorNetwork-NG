@@ -13,4 +13,5 @@
 # limitations under the License.
 
 import numpy as np
-SIZE_T = np.int64  #the size-type of index-arrays
+
+SIZE_T = np.int64  # the size-type of index-arrays

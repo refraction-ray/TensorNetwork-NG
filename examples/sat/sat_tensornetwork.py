@@ -44,77 +44,82 @@ import tensornetwork as tn
 
 
 def sat_tn(clauses: List[Tuple[int, int, int]]) -> List[tn.Edge]:
-  """Create a 3SAT TensorNetwork of the given 3SAT clauses.
+    """Create a 3SAT TensorNetwork of the given 3SAT clauses.
 
-    After full contraction, this network will be a tensor of size (2, 2, ..., 2)
-    with the rank being the same as the number of variables. Each element of the
-    final tensor represents whether the given assignment satisfies all of the
-    clauses. For example, if final_node.get_tensor()[0][1][1] == 1, then the
-    assiment (False, True, True) satisfies all clauses.
+      After full contraction, this network will be a tensor of size (2, 2, ..., 2)
+      with the rank being the same as the number of variables. Each element of the
+      final tensor represents whether the given assignment satisfies all of the
+      clauses. For example, if final_node.get_tensor()[0][1][1] == 1, then the
+      assiment (False, True, True) satisfies all clauses.
 
-  Args:
-    clauses: A list of 3 int tuples. Each element in the tuple corresponds to a
-      variable in the clause. If that int is negative, that variable is negated
-      in the clause.
+    Args:
+      clauses: A list of 3 int tuples. Each element in the tuple corresponds to a
+        variable in the clause. If that int is negative, that variable is negated
+        in the clause.
 
-  Returns:
-    net: The 3SAT TensorNetwork.
-    var_edges: The edges for the given variables.
+    Returns:
+      net: The 3SAT TensorNetwork.
+      var_edges: The edges for the given variables.
 
-  Raises:
-    ValueError: If any of the clauses have a 0 in them.
-  """
-  for clause in clauses:
-    if 0 in clause:
-      raise ValueError("0's are not allowed in the clauses.")
-  var_set = set()
-  for clause in clauses:
-    var_set |= {abs(x) for x in clause}
-  num_vars = max(var_set)
-  var_nodes = []
-  var_edges = []
+    Raises:
+      ValueError: If any of the clauses have a 0 in them.
+    """
+    for clause in clauses:
+        if 0 in clause:
+            raise ValueError("0's are not allowed in the clauses.")
+    var_set = set()
+    for clause in clauses:
+        var_set |= {abs(x) for x in clause}
+    num_vars = max(var_set)
+    var_nodes = []
+    var_edges = []
 
-  # Prepare the variable nodes.
-  for _ in range(num_vars):
-    new_node = tn.Node(np.ones(2, dtype=np.int32))
-    var_nodes.append(new_node)
-    var_edges.append(new_node[0])
+    # Prepare the variable nodes.
+    for _ in range(num_vars):
+        new_node = tn.Node(np.ones(2, dtype=np.int32))
+        var_nodes.append(new_node)
+        var_edges.append(new_node[0])
 
-  # Create the nodes for each clause
-  for clause in clauses:
-    a, b, c, = clause
-    clause_tensor = np.ones((2, 2, 2), dtype=np.int32)
-    clause_tensor[(-np.sign(a) + 1) // 2, (-np.sign(b) + 1) // 2,
-                  (-np.sign(c) + 1) // 2] = 0
-    clause_node = tn.Node(clause_tensor)
+    # Create the nodes for each clause
+    for clause in clauses:
+        (
+            a,
+            b,
+            c,
+        ) = clause
+        clause_tensor = np.ones((2, 2, 2), dtype=np.int32)
+        clause_tensor[
+            (-np.sign(a) + 1) // 2, (-np.sign(b) + 1) // 2, (-np.sign(c) + 1) // 2
+        ] = 0
+        clause_node = tn.Node(clause_tensor)
 
-    # Connect the variable to the clause through a copy tensor.
-    for i, var in enumerate(clause):
-      copy_tensor_node = tn.CopyNode(3, 2)
-      clause_node[i] ^ copy_tensor_node[0]
-      var_edges[abs(var) - 1] ^ copy_tensor_node[1]
-      var_edges[abs(var) - 1] = copy_tensor_node[2]
+        # Connect the variable to the clause through a copy tensor.
+        for i, var in enumerate(clause):
+            copy_tensor_node = tn.CopyNode(3, 2)
+            clause_node[i] ^ copy_tensor_node[0]
+            var_edges[abs(var) - 1] ^ copy_tensor_node[1]
+            var_edges[abs(var) - 1] = copy_tensor_node[2]
 
-  return var_edges
+    return var_edges
 
 
 def sat_count_tn(clauses: List[Tuple[int, int, int]]) -> Set[tn.AbstractNode]:
-  """Create a 3SAT Count TensorNetwork.
+    """Create a 3SAT Count TensorNetwork.
 
-  After full contraction, the final node will be the count of all possible
-  solutions to the given 3SAT problem.
+    After full contraction, the final node will be the count of all possible
+    solutions to the given 3SAT problem.
 
-  Args:
-    clauses: A list of 3 int tuples. Each element in the tuple corresponds to a
-      variable in the clause. If that int is negative, that variable is negated
-      in the clause.
+    Args:
+      clauses: A list of 3 int tuples. Each element in the tuple corresponds to a
+        variable in the clause. If that int is negative, that variable is negated
+        in the clause.
 
-  Returns:
-    nodes: The set of nodes
-  """
-  var_edges1 = sat_tn(clauses)
-  var_edges2 = sat_tn(clauses)
-  for edge1, edge2 in zip(var_edges1, var_edges2):
-    edge1 ^ edge2
-  # TODO(chaseriley): Support diconnected SAT graphs.
-  return tn.reachable(var_edges1[0].node1)
+    Returns:
+      nodes: The set of nodes
+    """
+    var_edges1 = sat_tn(clauses)
+    var_edges2 = sat_tn(clauses)
+    for edge1, edge2 in zip(var_edges1, var_edges2):
+        edge1 ^ edge2
+    # TODO(chaseriley): Support diconnected SAT graphs.
+    return tn.reachable(var_edges1[0].node1)

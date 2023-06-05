@@ -16,30 +16,31 @@
 from setuptools import find_packages, setup
 
 # This reads the __version__ variable from tensornetwork/version.py
-with open('tensornetwork/version.py') as f:
-  exec(f.read(), globals())
+with open("tensornetwork/version.py") as f:
+    exec(f.read(), globals())
 
-description = ('A high level tensor network API for '
-               'accelerated tensor network calculations.')
+description = (
+    "A high level tensor network API for " "accelerated tensor network calculations."
+)
 
 # Reading long Description from README.md file.
 with open("README.md", "r") as fh:
-  long_description = fh.read()
+    long_description = fh.read()
 
 # Read in requirements
 requirements = [
-    requirement.strip() for requirement in open('requirements.txt').readlines()
+    requirement.strip() for requirement in open("requirements.txt").readlines()
 ]
 
 setup(
-    name='tensornetwork',
+    name="tensornetwork",
     version=__version__,
-    url='http://github.com/google/TensorNetwork',
-    author='The TensorNetwork Developers',
-    author_email='martin.ganahl@gmail.com',
-    python_requires=('>=3.7.0'),
+    url="http://github.com/google/TensorNetwork",
+    author="The TensorNetwork Developers",
+    author_email="martin.ganahl@gmail.com",
+    python_requires=(">=3.7.0"),
     install_requires=requirements,
-    license='Apache 2.0',
+    license="Apache 2.0",
     description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",

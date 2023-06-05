@@ -12,13 +12,14 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../'))
+
+sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = 'TensorNetwork'
-copyright = '2019, The TensorNetwork Authors'
-author = 'The TensorNetwork Authors'
+project = "TensorNetwork"
+copyright = "2019, The TensorNetwork Authors"
+author = "The TensorNetwork Authors"
 
 # -- General configuration ---------------------------------------------------
 
@@ -26,21 +27,21 @@ author = 'The TensorNetwork Authors'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosummary",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 autosummary_generate = True
 autosummary_generate_overwrite = False
@@ -50,12 +51,12 @@ napolean_use_rtype = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    'logo_only': True,
+    "logo_only": True,
 }
-html_logo = '_static/tensornetwork_logo.jpg'
-master_doc = 'index'
-default_role = 'py:obj'
-autodoc_default_flags = ['members']
+html_logo = "_static/tensornetwork_logo.jpg"
+master_doc = "index"
+default_role = "py:obj"
+autodoc_default_flags = ["members"]
 autosummary_generate = True
