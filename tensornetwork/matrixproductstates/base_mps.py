@@ -14,7 +14,9 @@
 import numpy as np
 from tensornetwork.network_components import Node, contract_between
 from tensornetwork.network_operations import split_node_full_svd
-from tensornetwork.linalg.node_linalg import conj
+
+# from tensornetwork.linalg.node_linalg import conj
+from tensornetwork.matrixproductstates.utils import conj
 from tensornetwork.backends import backend_factory
 from functools import partial
 from tensornetwork.backends.decorators import jit

@@ -29,6 +29,7 @@ from tensornetwork.network_operations import (
 )
 
 from tensornetwork.tensor import Tensor, NconBuilder
+
 # from tensornetwork.linalg.initialization import eye, ones, randn, random_uniform, zeros
 
 # from tensornetwork.linalg.linalg import norm, qr, svd, rq, eigh, expm, inv
@@ -95,6 +96,7 @@ from tensornetwork.matrixproductstates.mpo import (
 )
 from tensornetwork.backend_contextmanager import DefaultBackend
 from tensornetwork.backend_contextmanager import set_default_backend
+
 # from tensornetwork import block_sparse
 # from tensornetwork.block_sparse.blocksparsetensor import BlockSparseTensor
 # from tensornetwork.block_sparse.blocksparsetensor import ChargeArray
