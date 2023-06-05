@@ -1,0 +1,9 @@
+tensorflow
+pytest
+torch
+jax
+jaxlib
+pylint
+pytest-cov
+codecov
+black
