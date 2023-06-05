@@ -22,6 +22,7 @@ var/
 .installed.cfg
 *.egg
 docs/clean
+*.disable
 
 # Installer logs
 pip-log.txt
