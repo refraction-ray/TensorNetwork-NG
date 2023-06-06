@@ -7,7 +7,7 @@ from unittest.mock import patch
 from collections import namedtuple
 import h5py
 import re
-import tensornetwork.network_components as network_components
+from tensornetwork import network_components
 from tensornetwork.network_components import (
     Node,
     CopyNode,
@@ -66,7 +66,9 @@ class TestNode(AbstractNode):
     def tensor(self, tensor):
         return super(TestNode, type(self)).tensor.fset(self, tensor)
 
-    def _load_node(self, node_data):  # pylint: disable=useless-super-delegation
+    def _load_node(
+        self, node_data
+    ):  # pylint: disable=useless-super-delegation, arguments-differ
         return super()._load_node(node_data)
 
     def _save_node(self, node_group):  # pylint: disable=useless-super-delegation

@@ -46,7 +46,7 @@ def test_tnwork_copy(backend):
     a[1] ^ c[2]
     b[2] ^ c[0]
     node_dict, _ = tn.copy({a, b, c})
-    tn.check_correct({node_dict[n] for n in {a, b, c}})
+    tn.check_correct({node_dict[n] for n in [a, b, c]})
 
     res = a @ b @ c
     res_copy = node_dict[a] @ node_dict[b] @ node_dict[c]
@@ -60,7 +60,7 @@ def test_tnwork_copy_names(backend):
     a[0] ^ b[1]
     b[2] ^ c[0]
     node_dict, edge_dict = tn.copy({a, b, c})
-    for node in {a, b, c}:
+    for node in [a, b, c]:
         assert node_dict[node].name == node.name
     for edge in tn.get_all_edges({a, b, c}):
         assert edge_dict[edge].name == edge.name
@@ -73,7 +73,7 @@ def test_tnwork_copy_identities(backend):
     a[0] ^ b[1]
     b[2] ^ c[0]
     node_dict, edge_dict = tn.copy({a, b, c})
-    for node in {a, b, c}:
+    for node in [a, b, c]:
         assert not node_dict[node] is node
     for edge in tn.get_all_edges({a, b, c}):
         assert not edge_dict[edge] is edge
@@ -200,7 +200,7 @@ def test_contract_copy_node(backend):
 
     val = tn.contract_copy_node(cn)
     result = val.tensor
-    assert list(result.shape) == []
+    assert not list(result.shape)
     np.testing.assert_allclose(result, 50 - 240 + 630)
 
 
@@ -440,7 +440,7 @@ def test_get_parallel_edge(backend):
     a = tn.Node(np.ones((2,) * 5), backend=backend)
     b = tn.Node(np.ones((2,) * 5), backend=backend)
     edges = set()
-    for i in {0, 1, 3}:
+    for i in [0, 1, 3]:
         edges.add(tn.connect(a[i], b[i]))
     for e in edges:
         assert set(tn.get_parallel_edges(e)) == edges
