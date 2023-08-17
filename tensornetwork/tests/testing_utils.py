@@ -26,10 +26,10 @@ np_not_bool = (
 )
 np_not_half = [np.float32, np.float64] + np_complex
 np_all_dtypes = np_not_bool + [
-    np.bool,
+    bool,
 ]
 
-torch_supported_dtypes = np_real + np_int + [np.uint8, np.bool, None]
+torch_supported_dtypes = np_real + np_complex + np_int + [np.uint8, bool, None]
 # torch_supported_dtypes = [np.float32, np.float64]
 
 
@@ -41,7 +41,7 @@ def safe_randn(shape, backend, dtype):
     """
     np.random.seed(seed=10)
     init = np.random.randn(*shape)
-    if dtype == np.bool:
+    if dtype == bool:
         init = np.round(init)
     init = init.astype(dtype)
 

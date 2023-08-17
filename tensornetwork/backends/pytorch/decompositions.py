@@ -158,7 +158,7 @@ def qr(
     right_dims = list(tensor.shape)[pivot_axis:]
 
     tensor = torch.reshape(tensor, (np.prod(left_dims), np.prod(right_dims)))
-    q, r = torch.qr(tensor)
+    q, r = torch.linalg.qr(tensor)
     if non_negative_diagonal:
         phases = torch.sign(torch.diagonal(r))
         q = q * phases
@@ -204,7 +204,7 @@ def rq(
     right_dims = tensor.shape[pivot_axis:]
     tensor = torch.reshape(tensor, [np.prod(left_dims), np.prod(right_dims)])
     # torch has currently no support for complex dtypes
-    q, r = torch.qr(torch.transpose(tensor, 0, 1))
+    q, r = torch.linalg.qr(torch.transpose(tensor, 0, 1))
     if non_negative_diagonal:
         phases = torch.sign(torch.diagonal(r))
         q = q * phases

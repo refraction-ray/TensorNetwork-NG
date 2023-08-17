@@ -146,7 +146,7 @@ def ncon_cost_check(
       float: the cost of the network contraction, given as log10(total_FLOPS).
     """
 
-    total_cost = np.float("-inf")
+    total_cost = float("-inf")
     N = len(tensors)
     tensor_dims = [np.array(np.log10(ele.shape)) for ele in tensors]
     connect_list = [np.array(ele) for ele in labels]

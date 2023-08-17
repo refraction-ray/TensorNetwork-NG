@@ -531,7 +531,7 @@ def test_matrix_ops(dtype, method):
     backend = jax_backend.JaxBackend()
     matrix = backend.randn((4, 4), dtype=dtype, seed=10)
     matrix1 = getattr(backend, method)(matrix)
-    matrix2 = getattr(sp.linalg, method)(matrix)
+    matrix2 = getattr(sp.linalg, method)(np.array(matrix))
     np.testing.assert_almost_equal(matrix1, matrix2)
 
 

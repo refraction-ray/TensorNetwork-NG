@@ -173,7 +173,9 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         return torchlib.empty(shape, dtype=dtype).uniform_(*boundaries)
 
     def conj(self, tensor: Tensor) -> Tensor:
-        return tensor  # pytorch does not support complex dtypes
+        if isinstance(tensor, np.ndarray):
+            tensor = torchlib.tensor(tensor)
+        return torchlib.conj(tensor).resolve_conj()
 
     def eigh(self, matrix: Tensor) -> Tuple[Tensor, Tensor]:
         return torchlib.linalg.eigh(matrix)
@@ -504,7 +506,7 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         """
         return torchlib.sign(tensor)
 
-    def item(self, tensor):
+    def item(self, tensor: Tensor) -> Tensor:
         return tensor.item()
 
     def eps(self, dtype: Type[np.number]) -> float:
