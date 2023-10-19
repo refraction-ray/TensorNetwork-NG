@@ -520,3 +520,17 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
           float: Machine epsilon.
         """
         return torchlib.finfo(dtype).eps
+
+    def prod(
+        self,
+        values: Tensor,
+        axis: Optional[Sequence[int]] = None,
+        keepdims: bool = False,
+    ) -> Tensor:
+        # axis can only be int in torch case...
+        if isinstance(axis, (list, tuple)):
+            assert (
+                len(axis) == 1
+            ), "Pytorch backen ``prod`` method cannot support tuple dims"
+            axis = axis[0]
+        return torchlib.prod(values, dim=axis, keepdim=keepdims)

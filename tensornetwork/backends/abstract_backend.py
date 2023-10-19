@@ -1109,3 +1109,20 @@ class AbstractBackend:
         """
 
         raise NotImplementedError(f"Backend {self.name} has not implemented eps.")
+
+    ## new ones from tc
+    def prod(
+        self,
+        values: Tensor,
+        axis: Optional[Sequence[int]] = None,
+        keepdims: bool = False,
+    ) -> Tensor:
+        """
+        product of tensors
+
+        :param values: _description_
+        :type values: Tensor
+        :return: _description_
+        :rtype: Tensor
+        """
+        raise NotImplementedError(f"Backend {self.name} has not implemented ``prod``.")

@@ -17,6 +17,8 @@ import jax
 import tensornetwork
 import tensorflow as tf
 
+tn = tensornetwork
+
 
 @pytest.fixture(name="backend", params=["numpy", "tensorflow", "jax", "pytorch"])
 def backend_fixture(request):
@@ -42,3 +44,49 @@ def tf_enable_v2_behaviour():
     tf.compat.v1.enable_v2_behavior()
     yield
     tf.compat.v1.enable_v2_behavior()
+
+
+@pytest.fixture(scope="function")
+def npb():
+    tn.set_default_backend("numpy")
+    yield tn.backends.backend_factory.get_backend("numpy")
+    tn.set_default_backend("numpy")  # default backend
+
+
+@pytest.fixture(scope="function")
+def tfb():
+    try:
+        tn.set_default_backend("tensorflow")
+        yield tn.backends.backend_factory.get_backend("jax")
+        tn.set_default_backend("numpy")  # default backend
+
+    except ImportError as e:
+        print(e)
+        tc.set_backend("numpy")
+        pytest.skip("****** No tensorflow backend found, skipping test suit *******")
+
+
+@pytest.fixture(scope="function")
+def jaxb():
+    try:
+        tn.set_default_backend("jax")
+        yield tn.backends.backend_factory.get_backend("jax")
+        tn.set_default_backend("numpy")  # default backend
+
+    except ImportError as e:
+        print(e)
+        tc.set_backend("numpy")
+        pytest.skip("****** No jax backend found, skipping test suit *******")
+
+
+@pytest.fixture(scope="function")
+def torchb():
+    try:
+        tn.set_default_backend("pytorch")
+        yield tn.backends.backend_factory.get_backend("pytorch")
+        tn.set_default_backend("numpy")  # default backend
+
+    except ImportError as e:
+        print(e)
+        tc.set_backend("numpy")
+        pytest.skip("****** No pytorch backend found, skipping test suit *******")

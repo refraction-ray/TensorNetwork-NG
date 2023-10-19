@@ -975,3 +975,11 @@ class JaxBackend(abstract_backend.AbstractBackend):
           float: Machine epsilon.
         """
         return jnp.finfo(dtype).eps
+
+    def prod(
+        self,
+        values: Tensor,
+        axis: Optional[Sequence[int]] = None,
+        keepdims: bool = False,
+    ) -> Tensor:
+        return jnp.prod(values, axis=axis, keepdims=keepdims)

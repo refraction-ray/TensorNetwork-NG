@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pyling: disable=line-too-long
-from typing import Optional, Any, Sequence, Tuple, Callable, List, Text, Type
-from typing import Union
+from typing import Optional, Any, Sequence, Tuple, Callable, List, Text, Type, Union
 from tensornetwork.backends import abstract_backend
 from tensornetwork.backends.numpy import decompositions
 import io
 import numpy as np
 import scipy as sp
 import scipy.sparse.linalg
+
 
 Tensor = Any
 
@@ -95,12 +95,11 @@ class NumPyBackend(abstract_backend.AbstractBackend):
         return np.sqrt(tensor)
 
     def convert_to_tensor(self, tensor: Tensor) -> Tensor:
-        if not isinstance(tensor, np.ndarray) and not np.isscalar(tensor):
-            raise TypeError(
-                "Expected a `np.array` or scalar. Got {}".format(type(tensor))
-            )
-        result = np.asarray(tensor)
-        return result
+        a = tensor
+        if not isinstance(a, np.ndarray) and not np.isscalar(a):
+            a = np.array(a)
+        a = np.asarray(a)
+        return a
 
     def outer_product(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
         return np.tensordot(tensor1, tensor2, 0)
@@ -474,9 +473,7 @@ class NumPyBackend(abstract_backend.AbstractBackend):
             is stopped. It means that an (approximate) invariant subspace has
             been found.
           ndiag: The tridiagonal Operator is diagonalized every `ndiag` iterations
-            to check convergence.
-          reorthogonalize: If `True`, Krylov vectors are kept orthogonal by
-            explicit orthogonalization (more costly than `reorthogonalize=False`)
+            by explicit orthogonalization (more costly than `reorthogonalize=False`)
         Returns:
           (eigvals, eigvecs)
            eigvals: A list of `numeig` lowest eigenvalues
@@ -838,3 +835,13 @@ class NumPyBackend(abstract_backend.AbstractBackend):
           float: Machine epsilon.
         """
         return np.finfo(dtype).eps
+
+    def prod(
+        self,
+        values: Tensor,
+        axis: Optional[Sequence[int]] = None,
+        keepdims: bool = False,
+    ) -> Tensor:
+        if isinstance(axis, list):
+            axis = tuple(axis)
+        return np.prod(values, axis=axis, keepdims=keepdims)

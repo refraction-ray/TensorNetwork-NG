@@ -37,7 +37,7 @@ setup(
     version=__version__,
     url="https://github.com/refraction-ray/TensorNetwork-NG",
     author="The TensorNetwork Developers",
-    author_email="znfesnpbh.@gmail.com",
+    author_email="znfesnpbh@gmail.com",
     python_requires=(">=3.7.0"),
     install_requires=requirements,
     license="Apache 2.0",

@@ -469,3 +469,11 @@ class TensorFlowBackend(abstract_backend.AbstractBackend):
           float: Machine epsilon.
         """
         return tf.experimental.numpy.finfo(dtype).eps
+
+    def prod(
+        self,
+        values: Tensor,
+        axis: Optional[Sequence[int]] = None,
+        keepdims: bool = False,
+    ) -> Tensor:
+        return tf.math.reduce_prod(values, axis=axis, keepdims=keepdims)
