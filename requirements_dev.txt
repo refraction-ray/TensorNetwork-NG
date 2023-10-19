@@ -7,3 +7,4 @@ pylint
 pytest-cov
 codecov
 black
+pytest-lazy-fixture
