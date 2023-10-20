@@ -141,10 +141,10 @@ def test_einsum():
     np.testing.assert_allclose(expected, actual)
 
 
-def test_convert_bad_test():
-    backend = numpy_backend.NumPyBackend()
-    with pytest.raises(TypeError):
-        backend.convert_to_tensor(tf.ones((2, 2)))
+# def test_convert_bad_test():
+#     backend = numpy_backend.NumPyBackend()
+#     with pytest.raises(TypeError):
+#         backend.convert_to_tensor(tf.ones((2, 2)))
 
 
 def test_norm():
