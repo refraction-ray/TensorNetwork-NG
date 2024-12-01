@@ -94,7 +94,9 @@ disable=
     consider-using-enumerate,
     unexpected-keyword-arg,
     no-value-for-parameter,
-    inconsistent-return-statements
+    inconsistent-return-statements,
+    too-many-positional-arguments,
+    possibly-used-before-assignment
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html
@@ -222,4 +224,4 @@ int-import-graph=
 [EXCEPTIONS]
 # Exceptions that will emit a warning when being caught. Defaults to
 # "Exception"
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtin.Exception
