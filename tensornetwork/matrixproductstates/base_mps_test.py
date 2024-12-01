@@ -22,7 +22,7 @@ from tensornetwork.backends import backend_factory
 from tensornetwork.matrixproductstates.base_mps import BaseMPS
 import tensorflow as tf
 
-from jax.config import config
+from jax import config
 
 config.update("jax_enable_x64", True)
 tf.compat.v1.enable_v2_behavior()

@@ -19,7 +19,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 from tensornetwork.backends.jax import jax_backend
-from jax.config import config
+from jax import config
 from tensornetwork.backends.jax import jitted_functions
 
 # pylint: disable=no-member

@@ -21,7 +21,7 @@ import tensornetwork as tn
 from tensornetwork.matrixproductstates.infinite_mps import InfiniteMPS
 import tensorflow as tf
 
-from jax.config import config
+from jax import config
 
 
 @pytest.fixture(
