@@ -1,5 +1,5 @@
 tensorflow
-pytest
+pytest<8.0
 torch
 jax
 jaxlib
