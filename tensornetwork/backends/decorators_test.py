@@ -1,4 +1,5 @@
 """Tests for decorators."""
+
 import pytest
 import numpy as np
 import functools

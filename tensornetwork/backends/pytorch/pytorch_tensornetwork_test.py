@@ -1,4 +1,5 @@
 """Tests for graphmode_tensornetwork."""
+
 import numpy as np
 from tensornetwork import (
     connect,
