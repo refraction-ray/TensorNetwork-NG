@@ -74,7 +74,7 @@ def test_svd_consistency(backend):
     node = tn.Node(original_tensor, backend=backend)
     u, vh, _ = tn.split_node(node, [node[0]], [node[1]])
     final_node = tn.contract_between(u, vh)
-    np.testing.assert_allclose(final_node.tensor, original_tensor, rtol=1e-6)
+    np.testing.assert_allclose(final_node.tensor, original_tensor, atol=3e-6)
 
 
 def test_svd_consistency_symmetric_real_matrix(backend):

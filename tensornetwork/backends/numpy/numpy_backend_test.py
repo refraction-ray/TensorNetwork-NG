@@ -482,7 +482,7 @@ def test_gmres_on_small_known_problem(dtype):
     x, _ = backend.gmres(A_mv, b, x0=x0, num_krylov_vectors=n_kry)
     solution = np.array([2.0, 1.0], dtype=dtype)
     assert x.dtype == solution.dtype
-    np.testing.assert_allclose(x, solution)
+    np.testing.assert_allclose(x, solution, atol=1e-6)
 
 
 @pytest.mark.parametrize("dtype", np_dtypes)

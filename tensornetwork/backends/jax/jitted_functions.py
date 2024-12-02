@@ -589,7 +589,10 @@ def _generate_arnoldi_factorization(jax: types.ModuleType) -> Callable:
 def _LR_sort(jax):
     @functools.partial(jax.jit, static_argnums=(0,))
     def sorter(p: int, evals: jax.Array) -> Tuple[jax.Array, jax.Array]:
-        inds = jax.numpy.argsort(jax.numpy.real(evals), kind="stable")[::-1]
+        try:
+            inds = jax.numpy.argsort(jax.numpy.real(evals), kind="stable")[::-1]
+        except TypeError:  # newer jax
+            inds = jax.numpy.argsort(jax.numpy.real(evals), stable=True)[::-1]
         shifts = evals[inds][-p:]
         return shifts, inds
 
@@ -599,7 +602,10 @@ def _LR_sort(jax):
 def _SA_sort(jax):
     @functools.partial(jax.jit, static_argnums=(0,))
     def sorter(p: int, evals: jax.Array) -> Tuple[jax.Array, jax.Array]:
-        inds = jax.numpy.argsort(evals, kind="stable")
+        try:
+            inds = jax.numpy.argsort(evals, kind="stable")
+        except TypeError:
+            inds = jax.numpy.argsort(evals, stable=True)
         shifts = evals[inds][-p:]
         return shifts, inds
 
@@ -609,7 +615,10 @@ def _SA_sort(jax):
 def _LA_sort(jax):
     @functools.partial(jax.jit, static_argnums=(0,))
     def sorter(p: int, evals: jax.Array) -> Tuple[jax.Array, jax.Array]:
-        inds = jax.numpy.argsort(evals, kind="stable")[::-1]
+        try:
+            inds = jax.numpy.argsort(evals, kind="stable")[::-1]
+        except TypeError:
+            inds = jax.numpy.argsort(evals, stable=True)[::-1]
         shifts = evals[inds][-p:]
         return shifts, inds
 
@@ -619,7 +628,10 @@ def _LA_sort(jax):
 def _LM_sort(jax):
     @functools.partial(jax.jit, static_argnums=(0,))
     def sorter(p: int, evals: jax.Array) -> Tuple[jax.Array, jax.Array]:
-        inds = jax.numpy.argsort(jax.numpy.abs(evals), kind="stable")[::-1]
+        try:
+            inds = jax.numpy.argsort(jax.numpy.abs(evals), kind="stable")[::-1]
+        except TypeError:
+            inds = jax.numpy.argsort(jax.numpy.abs(evals), stable=True)[::-1]
         shifts = evals[inds][-p:]
         return shifts, inds
 

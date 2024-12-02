@@ -417,16 +417,28 @@ class NumPyBackend(abstract_backend.AbstractBackend):
         A_op = sp.sparse.linalg.LinearOperator(
             matvec=matvec, shape=A_shape, dtype=b.dtype
         )
-        x, info = sp.sparse.linalg.gmres(
-            A_op,
-            b.ravel(),
-            x0,
-            tol=tol,
-            atol=atol,
-            restart=num_krylov_vectors,
-            maxiter=maxiter,
-            M=M,
-        )
+        try:
+            x, info = sp.sparse.linalg.gmres(
+                A_op,
+                b.ravel(),
+                x0,
+                tol=tol,
+                atol=atol,
+                restart=num_krylov_vectors,
+                maxiter=maxiter,
+                M=M,
+            )
+        except TypeError:  # newer scipy
+            x, info = sp.sparse.linalg.gmres(
+                A_op,
+                b.ravel(),
+                x0,
+                rtol=tol,
+                atol=atol,
+                restart=num_krylov_vectors,
+                maxiter=maxiter,
+                M=M,
+            )
         if info < 0:
             raise ValueError("ARPACK gmres received illegal input or broke down.")
         x = x.reshape(b.shape).astype(b.dtype)
