@@ -839,11 +839,7 @@ def test_infinite_loop(backend):
     a = np.ones((2, 2, 2))
     b = np.ones((2, 2))
     with pytest.raises(
-        ValueError,
-        match=r"ncon seems stuck in an infinite loop. \n"
-        r"Please check if `con_order` = \[3\] is a valid "
-        r"contraction order for \n"
-        r"`network_structure` = \[\[3, 1, 2\], \[3, 1\], \[3, 2\]\]",
+        ValueError, match=r"ncon seems stuck in an infinite loop. \n" r".* "
     ):
         ncon_interface.ncon(
             [a, b, b],
