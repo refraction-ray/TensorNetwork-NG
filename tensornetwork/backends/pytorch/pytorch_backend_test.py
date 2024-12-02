@@ -336,7 +336,7 @@ def test_eigsh_lanczos_reorthogonalize(numeig):
     np.testing.assert_allclose(eta1[0:numeig], eta2[0:numeig])
     for n in range(numeig):
         v2 = U2[:, n]
-        v2 /= torch.sum(v2)  # fix phases
+        v2 /= torch.sum(torch.tensor(v2))  # fix phases
         v1 = np.reshape(U1[n], (D))
         v1 /= torch.sum(v1)
 
