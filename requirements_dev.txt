@@ -3,8 +3,8 @@ pytest<8.0
 torch
 jax
 jaxlib
-pylint
+pylint<4
 pytest-cov
 codecov
-black
+black==26.1.0
 pytest-lazy-fixture

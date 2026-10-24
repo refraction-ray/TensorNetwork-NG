@@ -15,6 +15,7 @@
 """
 Decorator functions that depend on the backend.
 """
+
 from typing import Union, Iterable, Optional, Text, Callable
 import functools
 from tensornetwork.backends import abstract_backend

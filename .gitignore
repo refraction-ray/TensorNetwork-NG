@@ -37,3 +37,9 @@ coverage.xml
 
 # Max OS
 .DS_Store
+
+# Editor settings
+.vscode/
+
+# Local test logs
+test_errors.md

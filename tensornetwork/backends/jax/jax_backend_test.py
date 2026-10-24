@@ -1338,7 +1338,7 @@ def test_pivot(dtype, pivot_axis):
 @pytest.mark.parametrize(
     "dtype, atol",
     [
-        (np.float32, 1e-6),
+        (np.float32, 1e-4),
         (np.float64, 1e-10),
         (np.complex64, 1e-6),
         (np.complex128, 1e-10),

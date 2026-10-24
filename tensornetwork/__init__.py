@@ -1,3 +1,20 @@
+import sys
+import warnings
+
+# TensorCircuit-NG binds ``cite`` in its ``__init__`` before anything imports
+# tensornetwork, so a partially imported ``tensorcircuit`` without ``cite``
+# is the legacy TensorCircuit package.
+if "tensorcircuit" in sys.modules and not hasattr(sys.modules["tensorcircuit"], "cite"):
+    warnings.warn(
+        "The version of TensorCircuit you are using is outdated. "
+        "We recommend upgrading to TensorCircuit-NG for the latest features "
+        "and improvements. You can upgrade by running: "
+        "`pip uninstall tensorcircuit && pip install tensorcircuit-ng`. "
+        "For more information about TensorCircuit-NG, please visit: "
+        "https://github.com/tensorcircuit/tensorcircuit-ng.",
+        stacklevel=2,
+    )
+
 from tensornetwork.network_components import (
     AbstractNode,
     CopyNode,

@@ -40,10 +40,8 @@ def get_default_backend():
 
 def set_default_backend(backend: Union[Text, AbstractBackend]) -> None:
     if _default_backend_stack.stack:
-        raise AssertionError(
-            "The default backend should not be changed \
-                inside the backend context manager"
-        )
+        raise AssertionError("The default backend should not be changed \
+                inside the backend context manager")
     if not isinstance(backend, (Text, AbstractBackend)):
         raise ValueError(
             "Item passed to set_default_backend must be Text or BaseBackend"

@@ -69,7 +69,7 @@ def _get_cont_out_labels(network_structure: Sequence[Sequence[Union[int, str]]])
 
 
 def _canonicalize_network_structure(
-    network_structure: Sequence[Sequence[Union[int, str]]]
+    network_structure: Sequence[Sequence[Union[int, str]]],
 ) -> Tuple[List[List], Dict]:
     """
     Map `network_structure` to a canonical form.
