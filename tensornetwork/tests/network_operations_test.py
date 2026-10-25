@@ -190,8 +190,6 @@ def test_split_node_names(backend):
 
 
 def test_split_node_rq_unitarity_complex(backend):
-    if backend == "pytorch":
-        pytest.skip("Complex numbers currently not supported in PyTorch")
     if backend == "jax":
         pytest.skip("Complex QR crashes jax")
 
@@ -204,8 +202,8 @@ def test_split_node_rq_unitarity_complex(backend):
     qbar[0] ^ q[0]
     u2 = qbar @ q
 
-    np.testing.assert_almost_equal(u1.tensor, np.eye(3))
-    np.testing.assert_almost_equal(u2.tensor, np.eye(3))
+    np.testing.assert_almost_equal(np.asarray(u1.tensor), np.eye(3))
+    np.testing.assert_almost_equal(np.asarray(u2.tensor), np.eye(3))
 
 
 def test_split_node_rq_unitarity_float(backend):
@@ -236,8 +234,6 @@ def test_split_node_rq(backend):
 
 
 def test_split_node_qr_unitarity_complex(backend):
-    if backend == "pytorch":
-        pytest.skip("Complex numbers currently not supported in PyTorch")
     if backend == "jax":
         pytest.skip("Complex QR crashes jax")
 
@@ -250,8 +246,8 @@ def test_split_node_qr_unitarity_complex(backend):
     qbar[0] ^ q[0]
     u2 = qbar @ q
 
-    np.testing.assert_almost_equal(u1.tensor, np.eye(3))
-    np.testing.assert_almost_equal(u2.tensor, np.eye(3))
+    np.testing.assert_almost_equal(np.asarray(u1.tensor), np.eye(3))
+    np.testing.assert_almost_equal(np.asarray(u2.tensor), np.eye(3))
 
 
 def test_split_node_qr_unitarity_float(backend):
@@ -395,8 +391,6 @@ def test_reduced_density_nondangling(backend):
 
 
 def test_reduced_density_contraction(backend):
-    if backend == "pytorch":
-        pytest.skip("pytorch doesn't support complex numbers")
     a = tn.Node(
         np.array([[0.0, 1.0j], [-1.0j, 0.0]], dtype=np.complex64), backend=backend
     )

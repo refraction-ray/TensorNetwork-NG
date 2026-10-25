@@ -27,6 +27,20 @@ def test_expected_shapes():
     assert vh.shape == (6, 4, 5)
 
 
+def test_svd_complex_reconstruction_gradient():
+    val = torch.tensor(
+        [[1 + 2j, 3 - 1j, 2 + 0.5j], [-2 + 1j, 0.3 - 2j, 1 + 1j]],
+        dtype=torch.complex128,
+        requires_grad=True,
+    )
+
+    def loss(matrix):
+        u, s, vh, _ = decompositions.svd(torch, matrix, 1)
+        return torch.real((u * s).mm(vh)).square().sum()
+
+    assert torch.autograd.gradcheck(loss, (val,))
+
+
 def test_expected_shapes_qr():
     val = torch.zeros((2, 3, 4, 5))
     for non_negative_diagonal in [True, False]:

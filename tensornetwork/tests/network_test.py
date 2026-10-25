@@ -31,9 +31,7 @@ jax_dtypes = [
 
 
 def test_tnwork_copy_conj(backend):
-    if backend == "pytorch":
-        pytest.skip("Pytorch does not support complex numbers")
-    a = tn.Node(np.array([1.0 + 2.0j, 2.0 - 1.0j]))
+    a = tn.Node(np.array([1.0 + 2.0j, 2.0 - 1.0j]), backend=backend)
     nodes, _ = tn.copy({a}, conjugate=True)
     np.testing.assert_allclose(nodes[a].tensor, np.array([1.0 - 2.0j, 2.0 + 1.0j]))
 

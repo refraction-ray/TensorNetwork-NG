@@ -114,7 +114,7 @@ def svd(
     u = u[:, :num_sing_vals_keep]
     v = v[:, :num_sing_vals_keep]
 
-    vh = torch.transpose(v, 0, 1)
+    vh = torch.transpose(torch.conj(v), 0, 1)
 
     dim_s = s.shape[0]
     u = torch.reshape(u, left_dims + [dim_s])
