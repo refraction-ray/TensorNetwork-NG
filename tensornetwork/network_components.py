@@ -1172,12 +1172,15 @@ class Edge:
         Raises:
           AssertionError: Whether the edge actually contained `old_node`.
         """
+        # torch <= 2.11: property assignment can leave backing-container
+        # reads stale under torch.compile (fixed in 2.12.0). Explicit
+        # descriptor calls invoke the same setters and avoid this issue.
         if self.axis1 == old_axis and self.node1 is old_node:
-            self.axis1 = new_axis
-            self.node1 = new_node
+            type(self).axis1.fset(self, new_axis)
+            type(self).node1.fset(self, new_node)
         elif self.axis2 == old_axis and self.node2 is old_node:
-            self.axis2 = new_axis
-            self.node2 = new_node
+            type(self).axis2.fset(self, new_axis)
+            type(self).node2.fset(self, new_node)
         else:
             raise ValueError(
                 "Edge '{}' did not contain node '{}' on axis {}. "
