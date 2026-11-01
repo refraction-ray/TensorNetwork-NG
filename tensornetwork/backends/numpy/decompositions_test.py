@@ -51,6 +51,22 @@ class DecompositionsTest(tf.test.TestCase):
             q, r = decompositions.qr(np, random_matrix, 1, non_negative_diagonal)
             self.assertAllClose(q.dot(r), random_matrix)
 
+    def test_qr_non_negative_diagonal_complex(self):
+        matrix = np.array([[0.0, 1 + 2j], [0.0, 3 - 1j]])
+        q, r = decompositions.qr(np, matrix, 1, True)
+        self.assertAllClose(q.dot(r), matrix)
+        diag = np.diagonal(r)
+        self.assertAllClose(diag.imag, np.zeros(2))
+        self.assertTrue(np.all(diag.real >= 0))
+
+    def test_rq_non_negative_diagonal_complex(self):
+        matrix = np.array([[0.0, 0.0], [1 + 2j, 3 - 1j]])
+        r, q = decompositions.rq(np, matrix, 1, True)
+        self.assertAllClose(r.dot(q), matrix)
+        diag = np.diagonal(r)
+        self.assertAllClose(diag.imag, np.zeros(2))
+        self.assertTrue(np.all(diag.real >= 0))
+
     def test_max_singular_values(self):
         random_matrix = np.random.rand(10, 10)
         unitary1, _, unitary2 = np.linalg.svd(random_matrix)

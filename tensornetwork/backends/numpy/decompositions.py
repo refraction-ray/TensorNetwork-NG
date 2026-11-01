@@ -90,6 +90,7 @@ def qr(
     q, r = np.linalg.qr(tensor)
     if non_negative_diagonal:
         phases = np.sign(np.diagonal(r))
+        phases = np.where(phases == 0, np.ones_like(phases), phases)
         q = q * phases
         r = phases.conj()[:, None] * r
     center_dim = q.shape[1]
@@ -111,6 +112,7 @@ def rq(
     q, r = np.linalg.qr(np.conj(np.transpose(tensor)))
     if non_negative_diagonal:
         phases = np.sign(np.diagonal(r))
+        phases = np.where(phases == 0, np.ones_like(phases), phases)
         q = q * phases
         r = phases.conj()[:, None] * r
     r, q = np.conj(np.transpose(r)), np.conj(np.transpose(q))  # M=r*q at this point
