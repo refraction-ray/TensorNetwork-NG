@@ -98,6 +98,18 @@ def test_exlcuded_node_serial():
     assert_graphs_eq(sub_graph, new_nodes)
 
 
+def test_excluded_first_endpoint_node_serial():
+    a = tn.Node(np.random.normal(size=[8]), name="an")
+    b = tn.Node(np.random.normal(size=[8]), name="bn")
+    a[0] ^ b[0]
+
+    s = tn.nodes_to_json([b])
+    new_nodes, _ = tn.nodes_from_json(s)
+    edge = new_nodes[0].get_all_edges()[0]
+    assert edge.is_dangling()
+    assert edge.dimension == 8
+
+
 def test_serial_with_bindings():
     a, b, c, d = create_basic_network()
     bindings = {}

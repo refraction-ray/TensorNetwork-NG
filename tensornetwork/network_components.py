@@ -1074,6 +1074,8 @@ class Edge:
           ValueError: If node2 and axis2 are not either both `None` or both
             not be `None`.
         """
+        if node1 is None or axis1 is None:
+            raise ValueError("node1 and axis1 must not be None")
         if (node2 is None) != (axis2 is None):
             raise ValueError(
                 "node2 and axis2 must either be both None or both not be None"
