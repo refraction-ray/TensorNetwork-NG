@@ -67,7 +67,7 @@ def base(
 
     if not ignore_edge_order:
         if output_edge_order is None:
-            output_edge_order = list(get_subgraph_dangling(nodes))
+            output_edge_order = list(get_subgraph_dangling(nodes_set))
             if len(output_edge_order) > 1:
                 raise ValueError(
                     "The final node after contraction has more than "
@@ -75,7 +75,7 @@ def base(
                     "has to be provided."
                 )
 
-        if set(output_edge_order) != get_subgraph_dangling(nodes):
+        if set(output_edge_order) != get_subgraph_dangling(nodes_set):
             raise ValueError(
                 "output edges are not equal to the remaining "
                 "non-contracted edges of the final node."
@@ -237,15 +237,15 @@ def auto(
       Final node after full contraction.
     """
 
-    n = len(list(nodes))  # pytype thing
-    _nodes = nodes
+    nodes = list(nodes)
+    n = len(nodes)
     if n <= 0:
         raise ValueError("Cannot contract empty tensor network.")
     if n == 1:
         if not ignore_edge_order:
             if output_edge_order is None:
                 output_edge_order = list(
-                    (get_all_edges(_nodes) - get_all_nondangling(_nodes))
+                    (get_all_edges(nodes) - get_all_nondangling(nodes))
                 )
                 if len(output_edge_order) > 1:
                     raise ValueError(
@@ -254,11 +254,11 @@ def auto(
                         "has to be provided."
                     )
 
-        edges = get_all_nondangling(_nodes)
+        edges = get_all_nondangling(nodes)
         if edges:
             final_node = contract_parallel(edges.pop())
         else:
-            final_node = list(_nodes)[0]
+            final_node = list(nodes)[0]
         final_node.reorder_edges(output_edge_order)
         if not ignore_edge_order:
             final_node.reorder_edges(output_edge_order)
@@ -344,6 +344,7 @@ def path_solver(
     Returns:
       The optimal contraction path as returned by `opt_einsum`.
     """
+    nodes = list(nodes)
     if algorithm == "optimal":
         alg = functools.partial(
             opt_einsum.paths.dynamic_programming, memory_limit=memory_limit
@@ -355,8 +356,7 @@ def path_solver(
     elif algorithm == "greedy":
         alg = functools.partial(opt_einsum.paths.greedy, memory_limit=memory_limit)
     elif algorithm == "auto":
-        n = len(list(nodes))  # pytype thing
-        _nodes = nodes
+        n = len(nodes)
         if n <= 1:
             return []
         if n < 5:
@@ -400,6 +400,7 @@ def contract_path(
     Returns:
       Final node after full contraction.
     """
+    nodes = list(nodes)
     edges = get_all_edges(nodes)
     for edge in edges:
         if not edge.is_disabled:  # if its disabled we already contracted it
