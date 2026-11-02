@@ -273,21 +273,43 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
             # store the Lanczos vector for later
             if reorthogonalize:
                 for v in krylov_vecs:
-                    vector_n -= (
-                        v.contiguous().view(-1).dot(vector_n.contiguous().view(-1))
+                    vector_n -= torchlib.vdot(
+                        v.contiguous().view(-1), vector_n.contiguous().view(-1)
                     ) * torchlib.reshape(v, vector_n.shape)
             krylov_vecs.append(vector_n)
             A_vector_n = A(vector_n, *args)
             diag_elements.append(
-                vector_n.contiguous().view(-1).dot(A_vector_n.contiguous().view(-1))
+                torchlib.vdot(
+                    vector_n.contiguous().view(-1), A_vector_n.contiguous().view(-1)
+                )
             )
 
             if ((it > 0) and (it % ndiag) == 0) and (len(diag_elements) >= numeig):
                 # diagonalize the effective Hamiltonian
                 A_tridiag = (
-                    torchlib.diag(torchlib.tensor(diag_elements))
-                    + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), 1)
-                    + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), -1)
+                    torchlib.diag(
+                        torchlib.tensor(
+                            diag_elements,
+                            device=initial_state.device,
+                            dtype=initial_state.dtype,
+                        )
+                    )
+                    + torchlib.diag(
+                        torchlib.tensor(
+                            norms_vector_n[1:],
+                            device=initial_state.device,
+                            dtype=initial_state.dtype,
+                        ),
+                        1,
+                    )
+                    + torchlib.diag(
+                        torchlib.tensor(
+                            norms_vector_n[1:],
+                            device=initial_state.device,
+                            dtype=initial_state.dtype,
+                        ),
+                        -1,
+                    )
                 )
                 # eigvals, u = A_tridiag.symeig(eigenvectors=True)
                 eigvals, u = torchlib.linalg.eigh(A_tridiag)
@@ -304,15 +326,35 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
             vector_n = A_vector_n
 
         A_tridiag = (
-            torchlib.diag(torchlib.tensor(diag_elements))
-            + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), 1)
-            + torchlib.diag(torchlib.tensor(norms_vector_n[1:]), -1)
+            torchlib.diag(
+                torchlib.tensor(
+                    diag_elements,
+                    device=initial_state.device,
+                    dtype=initial_state.dtype,
+                )
+            )
+            + torchlib.diag(
+                torchlib.tensor(
+                    norms_vector_n[1:],
+                    device=initial_state.device,
+                    dtype=initial_state.dtype,
+                ),
+                1,
+            )
+            + torchlib.diag(
+                torchlib.tensor(
+                    norms_vector_n[1:],
+                    device=initial_state.device,
+                    dtype=initial_state.dtype,
+                ),
+                -1,
+            )
         )
         # eigvals, u = A_tridiag.symeig(eigenvectors=True)
         eigvals, u = torchlib.linalg.eigh(A_tridiag)
         eigenvectors = []
         for n2 in range(min(numeig, len(eigvals))):
-            state = self.zeros(initial_state.shape, initial_state.dtype)
+            state = torchlib.zeros_like(initial_state)
             for n1, vec in enumerate(krylov_vecs):
                 state += vec * u[n1, n2]
             eigenvectors.append(state / torchlib.norm(state))
