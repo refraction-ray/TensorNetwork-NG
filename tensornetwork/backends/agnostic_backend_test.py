@@ -10,3 +10,7 @@ def test_backend_methods(K):
     np.testing.assert_allclose(
         K.prod(K.convert_to_tensor(np.ones([3, 2, 5])), axis=[1]), np.ones([3, 5])
     )
+
+
+def test_tfb_is_tensorflow_backend(tfb):
+    assert tfb.name == "tensorflow"

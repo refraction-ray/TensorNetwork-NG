@@ -57,12 +57,12 @@ def npb():
 def tfb():
     try:
         tn.set_default_backend("tensorflow")
-        yield tn.backends.backend_factory.get_backend("jax")
+        yield tn.backends.backend_factory.get_backend("tensorflow")
         tn.set_default_backend("numpy")  # default backend
 
     except ImportError as e:
         print(e)
-        tc.set_backend("numpy")
+        tn.set_default_backend("numpy")
         pytest.skip("****** No tensorflow backend found, skipping test suit *******")
 
 
@@ -75,7 +75,7 @@ def jaxb():
 
     except ImportError as e:
         print(e)
-        tc.set_backend("numpy")
+        tn.set_default_backend("numpy")
         pytest.skip("****** No jax backend found, skipping test suit *******")
 
 
@@ -88,5 +88,5 @@ def torchb():
 
     except ImportError as e:
         print(e)
-        tc.set_backend("numpy")
+        tn.set_default_backend("numpy")
         pytest.skip("****** No pytorch backend found, skipping test suit *******")
