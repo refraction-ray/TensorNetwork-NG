@@ -528,6 +528,13 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         keepdims: bool = False,
     ) -> Tensor:
         # axis can only be int in torch case...
+        if axis is None:
+            # reduce over all elements
+            n_dims = len(values.shape)
+            result = torchlib.prod(torchlib.reshape(values, (-1,)), dim=0)
+            if keepdims:
+                result = torchlib.reshape(result, (1,) * n_dims)
+            return result
         if isinstance(axis, (list, tuple)):
             assert (
                 len(axis) == 1

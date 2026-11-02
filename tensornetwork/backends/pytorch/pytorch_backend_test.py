@@ -106,6 +106,25 @@ def test_shape_prod():
     assert actual == 2**24
 
 
+def test_prod():
+    backend = pytorch_backend.PyTorchBackend()
+    a = backend.convert_to_tensor(np.array([[1.0, 2.0], [3.0, 4.0]]))
+    r = backend.prod(a)
+    assert r.shape == ()
+    np.testing.assert_allclose(r, 24.0)
+    np.testing.assert_allclose(backend.prod(a, axis=0), [3.0, 8.0])
+    np.testing.assert_allclose(backend.prod(a, axis=1), [2.0, 12.0])
+    rk = backend.prod(a, keepdims=True)
+    assert rk.shape == (1, 1)
+    np.testing.assert_allclose(rk, np.array([[24.0]]))
+    np.testing.assert_allclose(
+        backend.prod(a, axis=0, keepdims=True), np.array([[3.0, 8.0]])
+    )
+    rk1 = backend.prod(a, axis=1, keepdims=True)
+    assert rk1.shape == (2, 1)
+    np.testing.assert_allclose(rk1, np.array([[2.0], [12.0]]))
+
+
 def test_sqrt():
     backend = pytorch_backend.PyTorchBackend()
     a = backend.convert_to_tensor(np.array([4.0, 9.0]))
