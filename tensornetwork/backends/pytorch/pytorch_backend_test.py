@@ -615,9 +615,9 @@ def test_diagonal(dtype, offset, axis1, axis2):
 @pytest.mark.parametrize("k", range(-2, 2))
 def test_diagflat(dtype, k):
     backend = pytorch_backend.PyTorchBackend()
-    array = backend.randn((16,), dtype=dtype, seed=10)
+    array = backend.randn((2, 2), dtype=dtype, seed=10)
     actual = backend.diagflat(array, k=k)
-    expected = torch.diag_embed(array, offset=k)
+    expected = np.diagflat(array.numpy(), k=k)
     np.testing.assert_allclose(expected, actual)
 
 

@@ -426,7 +426,7 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         Returns:
           tensor: A new tensor with all zeros save the specified diagonal.
         """
-        return torchlib.diag_embed(tensor, offset=k)
+        return torchlib.diagflat(tensor, k)
 
     def trace(
         self, tensor: Tensor, offset: int = 0, axis1: int = -2, axis2: int = -1
