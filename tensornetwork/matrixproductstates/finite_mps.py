@@ -62,7 +62,13 @@ class FiniteMPS(BaseMPS):
            `canonicalize = True`, `BaseMPS.center_position` is set to 0.
 
         Args:
-          tensors: A list of `Tensor` objects.
+          tensors: A list of rank-3 `Tensor` objects in site order, with axes
+            ordered as `(left bond, physical, right bond)`. Adjacent tensors
+            must have matching bond dimensions: `tensors[i].shape[2]` must
+            equal `tensors[i + 1].shape[0]`.
+            For an MPS with open boundaries, use dimension 1 for the first
+            tensor's left bond and the last tensor's right bond. These
+            boundary axes must not be omitted.
           center_position: The initial position of the center site.
           canonicalize: If `True` the mps is canonicalized at initialization.
           backend: The name of the backend that should be used to perform
