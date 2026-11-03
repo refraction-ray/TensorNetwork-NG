@@ -964,6 +964,51 @@ def test_edge_update_axis_raises_error_old_node(double_node_edge):
         edge.update_axis(old_axis=0, old_node=node2, new_axis=2, new_node=node2)
 
 
+def test_edge_update_axis_updates_backing_storage():
+    a = Node(np.eye(2))
+    b = Node(np.eye(2))
+    c = Node(np.eye(2))
+    edge = Edge(a, 1)
+    edge = edge ^ Edge(b, 0)
+
+    edge.update_axis(0, b, 1, c)
+    assert edge.node2 is c
+    assert edge.axis2 == 1
+    assert edge.get_nodes() == [a, c]
+
+    edge.update_axis(1, a, 0, c)
+    assert edge.node1 is c
+    assert edge.axis1 == 0
+    assert edge.get_nodes() == [c, c]
+
+    dangling = Edge(a, 0)
+    with pytest.raises(ValueError, match="did not contain"):
+        dangling.update_axis(1, b, 1, c)
+
+
+def test_compiled_update_axis_visible_to_raw_container_reads():
+    def move_endpoint(edge, node_a, node_b, t):
+        u = t @ t
+        edge.update_axis(0, node_b, 0, node_a)
+        nodes = edge.get_nodes()
+        return u, len(nodes), nodes[0] is nodes[1]
+
+    x = torch.ones((2, 2))
+    a = Node(x, backend="pytorch")
+    b = Node(x, backend="pytorch")
+    a[1] ^ b[0]
+    eager = move_endpoint(a[1], a, b, x)
+
+    a2 = Node(x, backend="pytorch")
+    b2 = Node(x, backend="pytorch")
+    a2[1] ^ b2[0]
+    compiled = torch.compile(
+        move_endpoint, backend="eager", fullgraph=False, dynamic=False
+    )
+    result = compiled(a2[1], a2, b2, x)
+    assert eager[1:] == result[1:] == (2, True)
+
+
 def test_edge_node1_property(single_node_edge):
     node = single_node_edge.node
     edge = single_node_edge.edge
