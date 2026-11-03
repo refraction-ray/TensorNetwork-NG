@@ -933,6 +933,14 @@ def test_edge_initialize_raises_error_faulty_arguments(double_node_edge):
         Edge(name="edge", node1=node1, node2=node2, axis1=0)
     with pytest.raises(ValueError):
         Edge(name="edge", node1=node1, axis1=0, axis2=0)
+    with pytest.raises(ValueError):
+        Edge(name="edge", node1=node1, axis1=None, node2=node2, axis2=0)
+    with pytest.raises(ValueError):
+        Edge(name="edge", node1=None, axis1=0, node2=node2, axis2=0)
+    with pytest.raises(ValueError):
+        Edge(node1=None, axis1=None, node2=node2, axis2=0)
+    with pytest.raises(ValueError):
+        Edge(node1=None, axis1=None)
 
 
 def test_edge_get_nodes_single(single_node_edge):

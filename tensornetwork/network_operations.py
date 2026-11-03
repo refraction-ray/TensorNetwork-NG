@@ -1006,6 +1006,9 @@ def nodes_from_json(json_str: str) -> Tuple[List[AbstractNode], Dict[str, Tuple[
     for e in network_dict["edges"]:
         e_nodes = [node_ids.get(n_id) for n_id in e["node_ids"]]
         axes = e["attributes"]["axes"]
+        if e_nodes[0] is None and e_nodes[1] is not None:
+            e_nodes = [e_nodes[1], None]
+            axes = [axes[1], None]
         edge = Edge(
             node1=e_nodes[0],
             axis1=axes[0],
