@@ -71,6 +71,28 @@ def test_qr():
         np.testing.assert_allclose(q.mm(r), random_matrix)
 
 
+def test_qr_complex_reconstruction():
+    matrix = torch.tensor([[0.0, 1 + 2j], [0.0, 3 - 1j]], dtype=torch.complex128)
+    for non_negative_diagonal in [True, False]:
+        q, r = decompositions.qr(torch, matrix, 1, non_negative_diagonal)
+        np.testing.assert_allclose(q.mm(r), matrix)
+        if non_negative_diagonal:
+            diag = torch.diagonal(r)
+            assert torch.all(diag.imag.abs() < 1e-10)
+            assert torch.all(diag.real >= 0)
+
+
+def test_rq_complex_reconstruction():
+    matrix = torch.tensor([[0.0, 0.0], [1 + 2j, 3 - 1j]], dtype=torch.complex128)
+    for non_negative_diagonal in [True, False]:
+        r, q = decompositions.rq(torch, matrix, 1, non_negative_diagonal)
+        np.testing.assert_allclose(r.mm(q), matrix)
+        if non_negative_diagonal:
+            diag = torch.diagonal(r)
+            assert torch.all(diag.imag.abs() < 1e-10)
+            assert torch.all(diag.real >= 0)
+
+
 def test_max_singular_values():
     np.random.seed(2018)
     random_matrix = np.random.rand(10, 10)
