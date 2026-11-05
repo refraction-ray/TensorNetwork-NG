@@ -66,7 +66,10 @@ class BaseMPS:
         """Initialize a BaseMPS.
 
         Args:
-          tensors: A list of `Tensor` objects.
+          tensors: A list of rank-3 `Tensor` objects in site order, with axes
+            ordered as `(left bond, physical, right bond)`. Adjacent tensors
+            must have matching bond dimensions: `tensors[i].shape[2]` must
+            equal `tensors[i + 1].shape[0]`.
           center_position: The initial position of the center site.
           connector_matrix: A `Tensor` of rank 2 connecting
             different unitcells. A value `None` is equivalent to an identity
@@ -525,9 +528,11 @@ class BaseMPS:
         center_position: Optional[int] = None,
         relative: bool = False,
     ) -> Tensor:
-        """Apply a two-site gate to an MPS. This routine will in general destroy
-        any canonical form of the state. If a canonical form is needed, the user
-        can restore it using `FiniteMPS.position`.
+        """Apply a gate to two adjacent sites of an MPS.
+
+        Canonical form is preserved if the input is canonical and its
+        orthogonality center is at `site1` or `site2`. Otherwise, no
+        orthogonality center is recorded after the gate is applied.
 
         Args:
           gate: A two-body gate.
@@ -535,14 +540,13 @@ class BaseMPS:
           site2: The second site where the gate acts.
           max_singular_values: The maximum number of singular values to keep.
           max_truncation_err: The maximum allowed truncation error.
-          center_position: An optional value to choose the MPS tensor at
-            `center_position` to be isometric after the application of the gate.
-            Defaults to `site1`. If the MPS is canonical (i.e.
-            `BaseMPS.center_position != None`), and if the orthogonality center
-            coincides with either `site1` or `site2`,  the orthogonality center will
-            be shifted to `center_position` (`site1` by default). If the
-            orthogonality center does not coincide with `(site1, site2)` then
-            `MPS.center_position` is set to `None`.
+          center_position: The site that absorbs the diagonal matrix of retained
+            singular values after SVD, or receives the triangular factor
+            after QR/RQ decomposition. Choose `site1` or `site2`; `None`
+            defaults to `site1`. If the input MPS is canonical with its
+            orthogonality center at either site, the chosen site becomes
+            the new orthogonality center. Otherwise, `self.center_position`
+            is set to or remains `None`.
           relative: Multiply `max_truncation_err` with the largest singular value.
 
         Returns:
@@ -558,14 +562,6 @@ class BaseMPS:
                 "site1 = {} is not between 0 <= site < N - 1 = {}".format(
                     site1, len(self)
                 )
-            )
-        if site2 < 1 or site2 >= len(self):
-            raise ValueError(
-                "site2 = {} is not between 1 <= site < N = {}".format(site2, len(self))
-            )
-        if site2 <= site1:
-            raise ValueError(
-                "site2 = {} has to be larger than site2 = {}".format(site2, site1)
             )
         if site2 != site1 + 1:
             raise ValueError(
@@ -638,14 +634,14 @@ class BaseMPS:
         else:
             tw = self.backend.zeros(1, dtype=self.dtype)
             if center_position == site2:
-                R, Q = self.backend.rq(tensor, pivot_axis=2)
-                left_tensor = R
-                right_tensor = Q
-                set_center_position(site2)
-            else:
                 Q, R = self.backend.qr(tensor, pivot_axis=2)
                 left_tensor = Q
                 right_tensor = R
+                set_center_position(site2)
+            else:
+                R, Q = self.backend.rq(tensor, pivot_axis=2)
+                left_tensor = R
+                right_tensor = Q
                 set_center_position(site1)
 
         self.tensors[site1] = left_tensor

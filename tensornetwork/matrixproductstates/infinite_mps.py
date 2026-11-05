@@ -47,7 +47,12 @@ class InfiniteMPS(BaseMPS):
         """Initialize a InfiniteMPS.
 
         Args:
-          tensors: A list of `Tensor` objects.
+          tensors: A list of rank-3 `Tensor` objects in site order within one
+            unit cell, with axes ordered as `(left bond, physical, right bond)`.
+            Adjacent tensors must have matching bond dimensions:
+            `tensors[i].shape[2]` must equal `tensors[i + 1].shape[0]`.
+            Across the unit-cell boundary, `tensors[-1].shape[2]` must equal
+            `tensors[0].shape[0]`.
           center_position: The initial position of the center site.
           connector_matrix: A `Tensor` of rank 2 connecting
             different unitcells. A value `None` is equivalent to an identity

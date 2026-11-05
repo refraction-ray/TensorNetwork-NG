@@ -160,32 +160,63 @@ def test_apply_one_site_gate(backend_dtype_values):
     np.testing.assert_allclose(mps.tensors[5], actual)
 
 
-def test_apply_two_site_gate(backend_dtype_values):
+@pytest.mark.parametrize(
+    "initial_center_position, center_position",
+    [
+        pytest.param(5, None, id="left_center-default_target"),
+        pytest.param(5, 6, id="left_center-right_target"),
+        pytest.param(0, None, id="outside_gate-default_target"),
+        pytest.param(None, None, id="no_center-default_target"),
+    ],
+)
+def test_apply_two_site_gate(
+    backend_dtype_values, initial_center_position, center_position
+):
     backend = backend_dtype_values[0]
     dtype = backend_dtype_values[1]
 
     D, d, N = 10, 2, 10
+    site1, site2 = 5, 6
     tensors = (
         [get_random_np((1, d, D), dtype)]
         + [get_random_np((D, d, D), dtype) for _ in range(N - 2)]
         + [get_random_np((D, d, 1), dtype)]
     )
-    mps = BaseMPS(tensors, center_position=0, backend=backend)
-    gate = get_random_np((2, 2, 2, 2), dtype)
-    tensor1 = mps.tensors[5]
-    tensor2 = mps.tensors[6]
+    if initial_center_position is None:
+        mps = BaseMPS(tensors, center_position=None, backend=backend)
+    else:
+        mps = tn.FiniteMPS(
+            tensors, center_position=initial_center_position, backend=backend
+        )
+        assert float(abs(mps.check_canonical())) < 1e-10
+    gate = get_random_np((d, d, d, d), dtype)
+    tensor1 = mps.tensors[site1]
+    tensor2 = mps.tensors[site2]
 
-    mps.apply_two_site_gate(gate, 5, 6)
+    mps.apply_two_site_gate(gate, site1, site2, center_position=center_position)
     tmp = np.tensordot(tensor1, tensor2, ([2], [0]))
     actual = np.transpose(np.tensordot(tmp, gate, ([1, 2], [2, 3])), (0, 2, 3, 1))
-    node1 = tn.Node(mps.tensors[5], backend=backend)
-    node2 = tn.Node(mps.tensors[6], backend=backend)
+    node1 = tn.Node(mps.tensors[site1], backend=backend)
+    node2 = tn.Node(mps.tensors[site2], backend=backend)
 
     node1[2] ^ node2[0]
     order = [node1[0], node1[1], node2[1], node2[2]]
     res = tn.contract_between(node1, node2)
     res.reorder_edges(order)
     np.testing.assert_allclose(res.tensor, actual)
+
+    target_center = site1 if center_position is None else center_position
+    expected_center = (
+        target_center if initial_center_position in (site1, site2) else None
+    )
+    assert mps.center_position == expected_center
+
+    if target_center == site2:
+        assert float(abs(mps.check_orthonormality("left", site1))) < 1e-10
+    else:
+        assert float(abs(mps.check_orthonormality("right", site2))) < 1e-10
+    if expected_center is not None:
+        assert float(abs(mps.check_canonical())) < 1e-10
 
 
 def test_position_raises_error(backend):
