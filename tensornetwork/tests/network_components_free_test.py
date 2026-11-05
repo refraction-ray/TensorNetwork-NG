@@ -21,7 +21,7 @@ import tensornetwork as tn
 from tensornetwork.backends.abstract_backend import AbstractBackend
 from typing import Dict
 
-string_type = network_components.string_type
+string_type = h5py.string_dtype(encoding=network_components.STRING_ENCODING)
 ENCODING = network_components.STRING_ENCODING
 SingleNodeEdgeTensor = namedtuple("SingleNodeEdgeTensor", "node edge tensor")
 DoubleNodeEdgeTensor = namedtuple(

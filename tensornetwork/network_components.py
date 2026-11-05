@@ -26,11 +26,14 @@ from typing import (
     overload,
     Sequence,
     Iterable,
+    TYPE_CHECKING,
 )
 import numpy as np
 from abc import ABC
 from abc import abstractmethod
-import h5py
+
+if TYPE_CHECKING:
+    import h5py
 
 # pylint: disable=useless-import-alias
 from tensornetwork import ops
@@ -39,7 +42,6 @@ from tensornetwork.backends.abstract_backend import AbstractBackend
 from tensornetwork.backend_contextmanager import get_default_backend
 
 STRING_ENCODING = "utf-8"
-string_type = h5py.string_dtype(encoding=STRING_ENCODING)
 Tensor = Any
 
 # This is required because of the circular dependency between
@@ -468,7 +470,7 @@ class AbstractNode(ABC):
 
     @classmethod
     @abstractmethod
-    def _load_node(cls, node_data: h5py.Group) -> "AbstractNode":
+    def _load_node(cls, node_data: "h5py.Group") -> "AbstractNode":
         """load a node based on hdf5 data.
 
         Args:
@@ -480,7 +482,7 @@ class AbstractNode(ABC):
         return  # pytype: disable=bad-return-type
 
     @classmethod
-    def _load_node_data(cls, node_data: h5py.Group) -> Tuple[Any, Any, Any, Any]:
+    def _load_node_data(cls, node_data: "h5py.Group") -> Tuple[Any, Any, Any, Any]:
         """Common method to enable loading nodes based on hdf5 data. Only a common
         functionality to load node properties is implemented.
 
@@ -497,13 +499,16 @@ class AbstractNode(ABC):
         return name, shape, axis_names, backend
 
     @abstractmethod
-    def _save_node(self, node_group: h5py.Group) -> None:
+    def _save_node(self, node_group: "h5py.Group") -> None:
         """Abstract method to enable saving nodes to hdf5. Only serializing common
         properties is implemented. Should be overwritten by subclasses.
 
         Args:
           node_group: h5py group where data is saved
         """
+        import h5py  # pylint: disable=import-outside-toplevel
+
+        string_type = h5py.string_dtype(encoding=STRING_ENCODING)
         node_group.create_dataset("type", dtype=string_type, data=type(self).__name__)
         node_group.create_dataset("backend", dtype=string_type, data=self.backend.name)
         node_group.create_dataset("name", data=self.name, dtype=string_type)
@@ -752,7 +757,7 @@ class Node(AbstractNode):
     def tensor(self, tensor: Tensor) -> Tensor:
         self._tensor = tensor
 
-    def _save_node(self, node_group: h5py.Group) -> None:
+    def _save_node(self, node_group: "h5py.Group") -> None:
         """Method to save a node to hdf5.
 
         Args:
@@ -762,7 +767,7 @@ class Node(AbstractNode):
         node_group.create_dataset("tensor", data=self._tensor)
 
     @classmethod
-    def _load_node(cls, node_data: h5py.Group) -> "AbstractNode":
+    def _load_node(cls, node_data: "h5py.Group") -> "AbstractNode":
         """Load a node based on hdf5 data.
 
         Args:
@@ -966,12 +971,15 @@ class CopyNode(AbstractNode):
         return self.backend.einsum(einsum_expression, *tensors)
 
     # pylint: disable=W0235
-    def _save_node(self, node_group: h5py.Group) -> None:
+    def _save_node(self, node_group: "h5py.Group") -> None:
         """Method to save a node to hdf5.
 
         Args:
           node_group: h5py group where data is saved
         """
+        import h5py  # pylint: disable=import-outside-toplevel
+
+        string_type = h5py.string_dtype(encoding=STRING_ENCODING)
         super()._save_node(node_group)
         node_group.create_dataset(
             name="copy_node_dtype",
@@ -980,7 +988,7 @@ class CopyNode(AbstractNode):
         )
 
     @classmethod
-    def _load_node(cls, node_data: h5py.Group) -> "CopyNode":
+    def _load_node(cls, node_data: "h5py.Group") -> "CopyNode":
         """Load a node based on hdf5 data.
 
         Args:
@@ -1270,12 +1278,15 @@ class Edge:
             raise TypeError("Edge name should be str type")
         self.name = name
 
-    def _save_edge(self, edge_group: h5py.Group) -> None:
+    def _save_edge(self, edge_group: "h5py.Group") -> None:
         """Method to save an edge to hdf5.
 
         Args:
           edge_group: h5py group where data is saved
         """
+        import h5py  # pylint: disable=import-outside-toplevel
+
+        string_type = h5py.string_dtype(encoding=STRING_ENCODING)
         edge_group.create_dataset("node1", dtype=string_type, data=self.node1.name)
         edge_group.create_dataset("axis1", data=self.axis1)
         if self.node2 is not None:
@@ -1284,7 +1295,7 @@ class Edge:
         edge_group.create_dataset("name", dtype=string_type, data=self.name)
 
     @classmethod
-    def _load_edge(cls, edge_data: h5py.Group, nodes_dict: Dict[Text, AbstractNode]):
+    def _load_edge(cls, edge_data: "h5py.Group", nodes_dict: Dict[Text, AbstractNode]):
         """load an edge based on hdf5 data.
 
         Args:

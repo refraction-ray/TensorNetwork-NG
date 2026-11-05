@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import h5py
 import numpy as np
 
 from tensornetwork.component_factory import get_component
@@ -22,7 +21,6 @@ from tensornetwork.network_operations import reachable, get_all_edges
 from typing import List, Union, BinaryIO
 
 STRING_ENCODING = network_components.STRING_ENCODING
-string_type = network_components.string_type
 
 
 def save_nodes(nodes: List[AbstractNode], path: Union[str, BinaryIO]) -> None:
@@ -33,6 +31,9 @@ def save_nodes(nodes: List[AbstractNode], path: Union[str, BinaryIO]) -> None:
         `nodes`.
       path: path to file where network is saved.
     """
+    import h5py  # pylint: disable=import-outside-toplevel
+
+    string_type = h5py.string_dtype(encoding=STRING_ENCODING)
     if reachable(nodes) > set(nodes):
         raise ValueError(
             "Some nodes in `nodes` are connected to nodes not contained in `nodes`."
@@ -99,6 +100,8 @@ def load_nodes(path: str) -> List[AbstractNode]:
     Returns:
       An iterable of `Node` objects
     """
+    import h5py  # pylint: disable=import-outside-toplevel
+
     nodes_list = []
     edges_list = []
     with h5py.File(path, "r") as net_file:
