@@ -1299,8 +1299,19 @@ def test_save_load_nodes(backend, tmp_path):
 
     nodes[0][0] ^ nodes[1][1]
     nodes[2][1] ^ nodes[2][2]
+    nodes[0][0].set_name("custom_shared")
+    nodes[2][1].set_name("custom_trace")
+    nodes[0][1].set_name("custom_dangling")
+
+    names_before = {
+        n: [edge.name for edge in node.edges] for n, node in enumerate(nodes)
+    }
 
     tn.save_nodes(nodes, tmp_path / "test_file_save_nodes")
+
+    for n, node in enumerate(nodes):
+        assert node.name == "Node{}".format(n)
+        assert [edge.name for edge in node.edges] == names_before[n]
 
     loaded_nodes = tn.load_nodes(tmp_path / "test_file_save_nodes")
     for n, node in enumerate(nodes):
@@ -1316,6 +1327,23 @@ def test_save_load_nodes(backend, tmp_path):
     trace = tn.contract_trace_edges(nodes[2])
     loaded_trace = tn.contract_trace_edges(loaded_nodes[2])
     np.testing.assert_allclose(trace.tensor, loaded_trace.tensor)
+
+
+def test_save_nodes_restores_edge_names_on_failure(backend, tmp_path):
+    node = Node(
+        np.ones((2, 3)),
+        backend=backend,
+        name="node",
+        axis_names=["left", "right"],
+    )
+    node[0].set_name("custom_left")
+    node[1].set_name("custom_right")
+
+    with pytest.raises(OSError):
+        tn.save_nodes([node], tmp_path / "missing_dir" / "file")
+
+    assert [edge.name for edge in node.edges] == ["custom_left", "custom_right"]
+    assert node.name == "node"
 
 
 def test_add_to_node_collection_list():

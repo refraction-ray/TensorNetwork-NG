@@ -47,7 +47,7 @@ def save_nodes(nodes: List[AbstractNode], path: Union[str, BinaryIO]) -> None:
     edges = list(get_all_edges(nodes))
     nodes = list(nodes)
 
-    old_edge_names = {n: edge.name for n, edge in enumerate(edges)}
+    old_edge_names = {edge: edge.name for edge in edges}
     old_node_names = {n: node.name for n, node in enumerate(nodes)}
 
     # generate unique names for nodes and edges
@@ -58,38 +58,39 @@ def save_nodes(nodes: List[AbstractNode], path: Union[str, BinaryIO]) -> None:
     for e, edge in enumerate(edges):
         edge.set_name("edge{}".format(e))
 
-    with h5py.File(path, "w") as net_file:
-        nodes_group = net_file.create_group("nodes")
-        node_names_group = net_file.create_group("node_names")
-        node_names_group.create_dataset(
-            "names",
-            dtype=string_type,
-            data=np.array(list(old_node_names.values()), dtype=object),
-        )
+    try:
+        with h5py.File(path, "w") as net_file:
+            nodes_group = net_file.create_group("nodes")
+            node_names_group = net_file.create_group("node_names")
+            node_names_group.create_dataset(
+                "names",
+                dtype=string_type,
+                data=np.array(list(old_node_names.values()), dtype=object),
+            )
 
-        edges_group = net_file.create_group("edges")
-        edge_names_group = net_file.create_group("edge_names")
-        edge_names_group.create_dataset(
-            "names",
-            dtype=string_type,
-            data=np.array(list(old_edge_names.values()), dtype=object),
-        )
+            edges_group = net_file.create_group("edges")
+            edge_names_group = net_file.create_group("edge_names")
+            edge_names_group.create_dataset(
+                "names",
+                dtype=string_type,
+                data=np.array(list(old_edge_names.values()), dtype=object),
+            )
+
+            for n, node in enumerate(nodes):
+                node_group = nodes_group.create_group(node.name)
+                node._save_node(node_group)
+                for edge in node.edges:
+                    if edge.node1 == node and edge in edges:
+                        edge_group = edges_group.create_group(edge.name)
+                        edge._save_edge(edge_group)
+                        edges.remove(edge)
+    finally:
+        # name edges and nodes back  to their original names
+        for edge, name in old_edge_names.items():
+            edge.set_name(name)
 
         for n, node in enumerate(nodes):
-            node_group = nodes_group.create_group(node.name)
-            node._save_node(node_group)
-            for edge in node.edges:
-                if edge.node1 == node and edge in edges:
-                    edge_group = edges_group.create_group(edge.name)
-                    edge._save_edge(edge_group)
-                    edges.remove(edge)
-
-    # name edges and nodes back  to their original names
-    for n, node in enumerate(nodes):
-        node.set_name(old_node_names[n])
-
-    for n, edge in enumerate(edges):
-        edge.set_name(old_edge_names[n])
+            node.set_name(old_node_names[n])
 
 
 def load_nodes(path: str) -> List[AbstractNode]:
