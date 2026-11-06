@@ -347,7 +347,7 @@ class TensorFlowBackend(abstract_backend.AbstractBackend):
           tensor: A new tensor with all zeros save the specified diagonal.
         """
         # pylint: disable=unexpected-keyword-arg
-        return tf.linalg.diag(tensor, k=k)
+        return tf.linalg.diag(tf.reshape(tensor, [-1]), k=k)
 
     def trace(
         self, tensor: Tensor, offset: int = 0, axis1: int = -2, axis2: int = -1
