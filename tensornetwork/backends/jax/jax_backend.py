@@ -52,9 +52,9 @@ class JaxBackend(abstract_backend.AbstractBackend):
         jsp = libjax.scipy
         self.name = "jax"
         self._dtype = np.dtype(dtype) if dtype is not None else None
-        self.jax_precision = (
-            precision if precision is not None else libjax.lax.Precision.DEFAULT
-        )  # pylint: disable=line-too-long
+        # None defers to jax's default_matmul_precision; an explicit
+        # Precision.DEFAULT would override that setting (TF32 on NVIDIA GPUs).
+        self.jax_precision = precision
 
     def tensordot(
         self, a: Tensor, b: Tensor, axes: Union[int, Sequence[Sequence[int]]]
