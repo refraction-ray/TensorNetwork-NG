@@ -40,6 +40,16 @@ def enable_jax_64():
 
 
 @pytest.fixture(autouse=True)
+def full_precision_matmul():
+    # The tests assume full-precision float32 arithmetic; TF32-class reduced
+    # precision (the framework defaults on Ampere+ GPUs) breaks several
+    # tolerance-sensitive tests.
+    tf.config.experimental.enable_tensor_float_32_execution(False)
+    jax.config.update("jax_default_matmul_precision", "highest")
+    yield
+
+
+@pytest.fixture(autouse=True)
 def tf_enable_v2_behaviour():
     tf.compat.v1.enable_v2_behavior()
     yield
