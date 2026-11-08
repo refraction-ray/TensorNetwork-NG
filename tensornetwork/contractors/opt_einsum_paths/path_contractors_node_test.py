@@ -25,8 +25,7 @@ def path_algorithm_fixture(request):
     return getattr(path_contractors, request.param)
 
 
-@pytest.mark.parametrize("as_generator", [False, True])
-def test_sanity_check(backend, path_algorithm, as_generator):
+def test_sanity_check(backend, path_algorithm):
     a = Node(np.eye(2), backend=backend)
     b = Node(np.ones((2, 7, 11)), backend=backend)
     c = Node(np.ones((7, 11, 13, 2)), backend=backend)
@@ -39,8 +38,6 @@ def test_sanity_check(backend, path_algorithm, as_generator):
     c[2] ^ d[1]
     c[3] ^ a[1]
     nodes = [a, b, c, d]
-    if as_generator:
-        nodes = (n for n in nodes)
     final_node = path_algorithm(nodes)
     assert final_node.shape == (13,)
 
@@ -221,8 +218,7 @@ def test_path_solver_optimal(backend):
 
 
 @pytest.mark.parametrize("algorithm", ["optimal", "branch", "greedy", "auto"])
-@pytest.mark.parametrize("as_generator", [False, True])
-def test_contract_path(backend, algorithm, as_generator):
+def test_contract_path(backend, algorithm):
     np.random.seed(10)
     D, d, M = 100, 4, 10
 
@@ -237,16 +233,11 @@ def test_contract_path(backend, algorithm, as_generator):
     mps[1] ^ mpo[3]
     mpsc[1] ^ mpo[2]
 
-    if as_generator:
-        solver_nodes = (n for n in [mps, mpsc, mpo, L])
-        contract_nodes = (n for n in [mps, mpsc, mpo, L])
-    else:
-        solver_nodes = [mps, mpsc, mpo, L]
-        contract_nodes = solver_nodes
-    path = path_contractors.path_solver(algorithm=algorithm, nodes=solver_nodes)
+    nodes = [mps, mpsc, mpo, L]
+    path = path_contractors.path_solver(algorithm=algorithm, nodes=nodes)
     order = [mpo[1], mps[2], mpsc[2]]
     res = path_contractors.contract_path(
-        path=path, nodes=contract_nodes, output_edge_order=order
+        path=path, nodes=nodes, output_edge_order=order
     )
     exp = ncon(
         [mps.tensor, mpsc.tensor, L.tensor, mpo.tensor],
@@ -254,6 +245,7 @@ def test_contract_path(backend, algorithm, as_generator):
         backend=backend,
     )
     np.testing.assert_allclose(res.tensor, exp)
+    assert nodes == [mps, mpsc, mpo, L]
 
 
 def test_contract_path_raises(backend):

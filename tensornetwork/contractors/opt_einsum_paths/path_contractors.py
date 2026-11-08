@@ -31,7 +31,7 @@ from tensornetwork.network_components import (
 )
 from tensornetwork.network_components import Edge, AbstractNode
 from tensornetwork.contractors.opt_einsum_paths import utils
-from typing import Any, Optional, Sequence, Iterable, Text, Tuple, List
+from typing import Any, Optional, Sequence, Text, Tuple, List
 
 # TODO (martin): add return types of functions back once TensorNetwork is gone
 #               remove _base_network
@@ -39,7 +39,7 @@ from typing import Any, Optional, Sequence, Iterable, Text, Tuple, List
 
 
 def base(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     algorithm: utils.Algorithm,
     output_edge_order: Optional[Sequence[Edge]] = None,
     ignore_edge_order: bool = False,
@@ -47,7 +47,7 @@ def base(
     """Base method for all `opt_einsum` contractors.
 
     Args:
-      nodes: A collection of connected nodes.
+      nodes: A list of connected nodes.
       algorithm: `opt_einsum` contraction method to use.
       output_edge_order: An optional list of edges. Edges of the
         final node in `nodes_set`
@@ -67,7 +67,7 @@ def base(
 
     if not ignore_edge_order:
         if output_edge_order is None:
-            output_edge_order = list(get_subgraph_dangling(nodes_set))
+            output_edge_order = list(get_subgraph_dangling(nodes))
             if len(output_edge_order) > 1:
                 raise ValueError(
                     "The final node after contraction has more than "
@@ -75,7 +75,7 @@ def base(
                     "has to be provided."
                 )
 
-        if set(output_edge_order) != get_subgraph_dangling(nodes_set):
+        if set(output_edge_order) != get_subgraph_dangling(nodes):
             raise ValueError(
                 "output edges are not equal to the remaining "
                 "non-contracted edges of the final node."
@@ -109,7 +109,7 @@ def base(
 
 
 def optimal(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     output_edge_order: Optional[Sequence[Edge]] = None,
     memory_limit: Optional[int] = None,
     ignore_edge_order: bool = False,
@@ -122,7 +122,7 @@ def optimal(
     take longer than just contracting in a suboptimal way.
 
     Args:
-      nodes: an iterable of Nodes
+      nodes: A list of Nodes
       output_edge_order: An optional list of edges.
         Edges of the final node in `nodes_set`
         are reordered into `output_edge_order`;
@@ -141,7 +141,7 @@ def optimal(
 
 
 def branch(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     output_edge_order: Optional[Sequence[Edge]] = None,
     memory_limit: Optional[int] = None,
     nbranch: Optional[int] = None,
@@ -158,7 +158,7 @@ def branch(
       https://optimized-einsum.readthedocs.io/en/latest/branching_path.html
 
     Args:
-      nodes: an iterable of Nodes
+      nodes: A list of Nodes
       output_edge_order: An optional list of edges.
         Edges of the final node in `nodes_set`
         are reordered into `output_edge_order`;
@@ -180,7 +180,7 @@ def branch(
 
 
 def greedy(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     output_edge_order: Optional[Sequence[Edge]] = None,
     memory_limit: Optional[int] = None,
     ignore_edge_order: bool = False,
@@ -196,7 +196,7 @@ def greedy(
       https://optimized-einsum.readthedocs.io/en/latest/greedy_path.html
 
     Args:
-      nodes: an iterable of Nodes
+      nodes: A list of Nodes
       output_edge_order: An optional list of edges.
         Edges of the final node in `nodes_set`
         are reordered into `output_edge_order`;
@@ -214,7 +214,7 @@ def greedy(
 
 # pylint: disable=too-many-return-statements
 def auto(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     output_edge_order: Optional[Sequence[Edge]] = None,
     memory_limit: Optional[int] = None,
     ignore_edge_order: bool = False,
@@ -224,7 +224,7 @@ def auto(
     Default behavior is based on `opt_einsum`'s `auto` contractor.
 
     Args:
-      nodes: A collection of connected nodes.
+      nodes: A list of connected nodes.
       output_edge_order: An optional list of edges.
         Edges of the final node in `nodes_set`
         are reordered into `output_edge_order`;
@@ -237,15 +237,15 @@ def auto(
       Final node after full contraction.
     """
 
-    nodes = list(nodes)
-    n = len(nodes)
+    n = len(list(nodes))  # pytype thing
+    _nodes = nodes
     if n <= 0:
         raise ValueError("Cannot contract empty tensor network.")
     if n == 1:
         if not ignore_edge_order:
             if output_edge_order is None:
                 output_edge_order = list(
-                    (get_all_edges(nodes) - get_all_nondangling(nodes))
+                    (get_all_edges(_nodes) - get_all_nondangling(_nodes))
                 )
                 if len(output_edge_order) > 1:
                     raise ValueError(
@@ -254,11 +254,11 @@ def auto(
                         "has to be provided."
                     )
 
-        edges = get_all_nondangling(nodes)
+        edges = get_all_nondangling(_nodes)
         if edges:
             final_node = contract_parallel(edges.pop())
         else:
-            final_node = list(nodes)[0]
+            final_node = list(_nodes)[0]
         final_node.reorder_edges(output_edge_order)
         if not ignore_edge_order:
             final_node.reorder_edges(output_edge_order)
@@ -292,7 +292,7 @@ def auto(
 
 
 def custom(
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     optimizer: Any,
     output_edge_order: Sequence[Edge] = None,
     memory_limit: Optional[int] = None,
@@ -307,7 +307,7 @@ def custom(
       https://optimized-einsum.readthedocs.io/en/latest/custom_paths.html
 
     Args:
-      nodes: an iterable of Nodes
+      nodes: A list of Nodes
       output_edge_order: An optional list of edges.
         Edges of the final node in `nodes_set`
         are reordered into `output_edge_order`;
@@ -326,7 +326,7 @@ def custom(
 
 def path_solver(
     algorithm: Text,
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     memory_limit: Optional[int] = None,
     nbranch: Optional[int] = None,
 ) -> Tuple[List[Tuple[int, int]], List[AbstractNode]]:
@@ -334,7 +334,7 @@ def path_solver(
 
     Args:
       algorithm: `opt_einsum` method to use for calculating the contraction path.
-      nodes: an iterable of `AbstractNode` objects to contract.
+      nodes: A list of `AbstractNode` objects to contract.
       memory_limit: Maximum number of elements in an array during contractions.
         Only relevant for `algorithm in (optimal, greedy)`
       nbranch: Number of best contractions to explore.
@@ -344,7 +344,6 @@ def path_solver(
     Returns:
       The optimal contraction path as returned by `opt_einsum`.
     """
-    nodes = list(nodes)
     if algorithm == "optimal":
         alg = functools.partial(
             opt_einsum.paths.dynamic_programming, memory_limit=memory_limit
@@ -356,7 +355,8 @@ def path_solver(
     elif algorithm == "greedy":
         alg = functools.partial(opt_einsum.paths.greedy, memory_limit=memory_limit)
     elif algorithm == "auto":
-        n = len(nodes)
+        n = len(list(nodes))  # pytype thing
+        _nodes = nodes
         if n <= 1:
             return []
         if n < 5:
@@ -386,14 +386,14 @@ def path_solver(
 
 def contract_path(
     path: Tuple[List[Tuple[int, int]]],
-    nodes: Iterable[AbstractNode],
+    nodes: List[AbstractNode],
     output_edge_order: Sequence[Edge],
 ) -> AbstractNode:
     """Contract `nodes` using `path`.
 
     Args:
       path: The contraction path as returned from `path_solver`.
-      nodes: A collection of connected nodes.
+      nodes: A list of connected nodes.
       output_edge_order: A list of edges. Edges of the
         final node in `nodes`
         are reordered into `output_edge_order`;
