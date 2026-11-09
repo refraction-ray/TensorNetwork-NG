@@ -25,6 +25,15 @@ import numpy as np
 
 Tensor = Any
 
+
+def _zeros_with_grad(shape, tensor):
+    """Zeros of `shape` keeping a zero gradient path to `tensor`."""
+    zeros = tf.zeros(shape, dtype=tensor.dtype)
+    if tensor.dtype.is_bool:
+        return zeros
+    return zeros + tf.reduce_sum(tensor) * tf.zeros((), dtype=tensor.dtype)
+
+
 # pylint: disable=abstract-method
 
 
@@ -335,6 +344,15 @@ class TensorFlowBackend(abstract_backend.AbstractBackend):
             )
             raise NotImplementedError(errstr)
         # pylint: disable=unexpected-keyword-arg
+        if (
+            not tf.is_tensor(offset)
+            and tensor.shape[-1] is not None
+            and tensor.shape[-2] is not None
+            and (offset >= tensor.shape[-1] or offset <= -tensor.shape[-2])
+        ):
+            return _zeros_with_grad(
+                tf.concat([tf.shape(tensor)[:-2], [0]], axis=0), tensor
+            )
         return tf.linalg.diag_part(tensor, k=offset)
 
     def diagflat(self, tensor: Tensor, k: int = 0) -> Tensor:
@@ -347,6 +365,8 @@ class TensorFlowBackend(abstract_backend.AbstractBackend):
           tensor: A new tensor with all zeros save the specified diagonal.
         """
         # pylint: disable=unexpected-keyword-arg
+        if tensor.shape.num_elements() == 0:
+            return _zeros_with_grad((abs(k), abs(k)), tensor)
         return tf.linalg.diag(tf.reshape(tensor, [-1]), k=k)
 
     def trace(

@@ -541,11 +541,24 @@ def test_matmul():
 
 
 @pytest.mark.parametrize("dtype", tf_dtypes)
-@pytest.mark.parametrize("offset", range(-2, 2))
+@pytest.mark.parametrize(
+    ("shape", "offset"),
+    [
+        ((5, 5, 5, 5), -2),
+        ((5, 5, 5, 5), -1),
+        ((5, 5, 5, 5), 0),
+        ((5, 5, 5, 5), 1),
+        ((2, 0), 1),
+        ((2, 0), -1),
+        ((0, 2), -1),
+        ((3, 1, 0), 2),
+        ((2, 3), 5),
+        ((2, 3), -4),
+    ],
+)
 @pytest.mark.parametrize("axis1", [-2, 0])
 @pytest.mark.parametrize("axis2", [-1, 0])
-def test_diagonal(dtype, offset, axis1, axis2):
-    shape = (5, 5, 5, 5)
+def test_diagonal(dtype, shape, offset, axis1, axis2):
     backend = tensorflow_backend.TensorFlowBackend()
     array = backend.randn(shape, dtype=dtype, seed=10)
     if axis1 != -2 or axis2 != -1:
@@ -557,14 +570,129 @@ def test_diagonal(dtype, offset, axis1, axis2):
         np.testing.assert_allclose(actual, expected)
 
 
-@pytest.mark.parametrize("dtype", tf_dtypes)
-@pytest.mark.parametrize("k", range(-2, 2))
-def test_diagflat(dtype, k):
+@pytest.mark.parametrize(
+    ("signature", "offset", "input_shape", "expected", "error"),
+    [
+        ((None, 2, 0), 0, (3, 2, 0), (3, 0), None),
+        ((0, None, None), 0, (0, 65536, 65536), (0, 65536), None),
+        ((None, 2, None), 1, (3, 2, 0), None, tf.errors.InvalidArgumentError),
+    ],
+)
+def test_diagonal_dynamic_shape(signature, offset, input_shape, expected, error):
     backend = tensorflow_backend.TensorFlowBackend()
-    array = backend.randn((2, 2), dtype=dtype, seed=10)
+
+    @tf.function(input_signature=[tf.TensorSpec(signature, tf.float32)])
+    def diagonal_dynamic(t):
+        return backend.diagonal(t, offset=offset)
+
+    if error is None:
+        np.testing.assert_allclose(
+            diagonal_dynamic(tf.zeros(input_shape)), np.zeros(expected)
+        )
+    else:
+        with pytest.raises(error):
+            diagonal_dynamic(tf.zeros(input_shape))
+
+
+@pytest.mark.parametrize("dtype", tf_dtypes)
+@pytest.mark.parametrize(
+    ("shape", "k"),
+    [
+        ((2, 2), -2),
+        ((2, 2), -1),
+        ((2, 2), 0),
+        ((2, 2), 1),
+        ((0,), 3),
+        ((2, 0), -1),
+    ],
+)
+def test_diagflat(dtype, shape, k):
+    backend = tensorflow_backend.TensorFlowBackend()
+    array = backend.randn(shape, dtype=dtype, seed=10)
     actual = backend.diagflat(array, k=k)
     expected = np.diagflat(array.numpy(), k=k)
     np.testing.assert_allclose(expected, actual)
+
+
+def test_diagflat_dynamic_shape():
+    backend = tensorflow_backend.TensorFlowBackend()
+
+    @tf.function(input_signature=[tf.TensorSpec([None], tf.float32)])
+    def diagflat_dynamic(t):
+        return backend.diagflat(t, k=2)
+
+    np.testing.assert_allclose(diagflat_dynamic(tf.zeros(0)), np.zeros((2, 2)))
+
+
+def test_empty_input_gradient():
+    backend = tensorflow_backend.TensorFlowBackend()
+    x = tf.Variable(tf.ones((2, 2)))
+    with tf.GradientTape() as tape:
+        loss = tf.reduce_sum(backend.diagonal(x[:, :0], offset=0))
+    np.testing.assert_allclose(tape.gradient(loss, x), np.zeros((2, 2)))
+    x = tf.Variable([1.0, 2.0])
+    with tf.GradientTape() as tape:
+        loss = tf.reduce_sum(backend.diagflat(x[:0], k=0))
+    np.testing.assert_allclose(tape.gradient(loss, x), [0.0, 0.0])
+
+
+def test_diagonal_tensor_offsets():
+    backend = tensorflow_backend.TensorFlowBackend()
+
+    @tf.function(autograph=False)
+    def tensor_offset(t, k):
+        return backend.diagonal(t, offset=k)
+
+    k = tf.Variable(0, dtype=tf.int32)
+
+    @tf.function(autograph=False)
+    def variable_offset(t):
+        return backend.diagonal(t, offset=k)
+
+    array = np.ones((2, 3))
+    np.testing.assert_allclose(
+        tensor_offset(tf.convert_to_tensor(array), tf.constant(0)),
+        np.diagonal(array, offset=0, axis1=-2, axis2=-1),
+    )
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        tensor_offset(tf.convert_to_tensor(array), tf.constant(5))
+    np.testing.assert_allclose(
+        variable_offset(tf.convert_to_tensor(array)),
+        np.diagonal(array, offset=0, axis1=-2, axis2=-1),
+    )
+    k.assign(5)
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        variable_offset(tf.convert_to_tensor(array))
+
+
+def test_empty_input_bool():
+    backend = tensorflow_backend.TensorFlowBackend()
+
+    @tf.function(input_signature=[tf.TensorSpec([None, 2, None], tf.bool)])
+    def diagonal_dynamic(t):
+        return backend.diagonal(t, offset=0)
+
+    @tf.function(input_signature=[tf.TensorSpec([None, 2], tf.bool)])
+    def diagflat_dynamic(t):
+        return backend.diagflat(t, k=0)
+
+    array = backend.convert_to_tensor(np.ones((2, 0), dtype=np.bool_))
+    np.testing.assert_array_equal(
+        backend.diagonal(array, offset=0),
+        np.diagonal(np.ones((2, 0), dtype=np.bool_), offset=0),
+    )
+    np.testing.assert_array_equal(
+        backend.diagflat(array, k=1),
+        np.diagflat(np.ones((2, 0), dtype=np.bool_), k=1),
+    )
+    np.testing.assert_array_equal(
+        diagonal_dynamic(np.ones((3, 2, 4), dtype=np.bool_)),
+        np.diagonal(np.ones((3, 2, 4), dtype=np.bool_), offset=0, axis1=-2, axis2=-1),
+    )
+    np.testing.assert_array_equal(
+        diagflat_dynamic(np.ones((3, 2), dtype=np.bool_)),
+        np.diagflat(np.ones((3, 2), dtype=np.bool_), k=0),
+    )
 
 
 @pytest.mark.parametrize("dtype", tf_dtypes)
