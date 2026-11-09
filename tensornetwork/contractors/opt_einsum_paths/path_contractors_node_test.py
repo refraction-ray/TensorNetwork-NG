@@ -245,6 +245,7 @@ def test_contract_path(backend, algorithm):
         backend=backend,
     )
     np.testing.assert_allclose(res.tensor, exp)
+    assert nodes == [mps, mpsc, mpo, L]
 
 
 def test_contract_path_raises(backend):
