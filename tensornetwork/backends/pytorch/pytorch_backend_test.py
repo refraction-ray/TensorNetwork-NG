@@ -293,7 +293,7 @@ def test_eigsh_lanczos_0():
 
 
 def test_eigsh_lanczos_1():
-    dtype = torch.float64
+    dtype = torch.complex128
     backend = pytorch_backend.PyTorchBackend()
     D = 24
     init = backend.randn((D,), dtype=dtype)
@@ -328,7 +328,7 @@ def test_eigsh_small_number_krylov_vectors():
 
 @pytest.mark.parametrize("numeig", [1, 2, 3, 4])
 def test_eigsh_lanczos_reorthogonalize(numeig):
-    dtype = torch.float64
+    dtype = torch.complex128
     backend = pytorch_backend.PyTorchBackend()
     D = 24
     np.random.seed(10)
@@ -424,6 +424,21 @@ def test_eigsh_lanczos_raises():
         TypeError, match="Expected a `torch.Tensor`. Got <class 'list'>"
     ):
         backend.eigsh_lanczos(lambda x: x, initial_state=[1, 2, 3])
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_eigsh_lanczos_cuda_device():
+    backend = pytorch_backend.PyTorchBackend()
+    H = torch.diag(torch.tensor([1.0, 2.0], device="cuda", dtype=torch.float64))
+    init = torch.ones(2, device="cuda", dtype=torch.float64)
+
+    def mv(x, mat):
+        return mat.mv(x)
+
+    eta, u = backend.eigsh_lanczos(mv, [H], init, num_krylov_vecs=3, ndiag=1)
+    assert eta.device.type == "cuda"
+    assert u[0].device.type == "cuda"
+    np.testing.assert_allclose(eta[0].cpu(), 1.0, rtol=1e-12, atol=1e-12)
 
 
 @pytest.mark.parametrize(
