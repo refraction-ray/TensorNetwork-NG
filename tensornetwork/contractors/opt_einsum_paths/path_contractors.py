@@ -401,20 +401,23 @@ def contract_path(
       Final node after full contraction.
     """
     nodes = list(nodes)
-    edges = get_all_edges(nodes)
-    for edge in edges:
-        if not edge.is_disabled:  # if its disabled we already contracted it
-            if edge.is_trace():
-                contract_parallel(edge)
 
     if len(nodes) == 1:
         newnode = nodes[0].copy()
         for edge in nodes[0].edges:
             redirect_edge(edge, newnode, nodes[0])
+        newnode = contract_trace_edges(newnode)
         return newnode.reorder_edges(output_edge_order)
 
     if len(path) == 0:
-        return nodes
+        raise ValueError(
+            "contract_path received an empty path. "
+            "At least one contraction step is required."
+        )
+
+    for i, node in enumerate(nodes):
+        if any(edge.is_trace() for edge in node.edges):
+            nodes[i] = contract_trace_edges(node)
 
     for p in path:
         if len(p) > 1:
