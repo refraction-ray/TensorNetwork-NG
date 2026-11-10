@@ -17,7 +17,6 @@ import functools
 from tensornetwork.network_components import Node, contract_between
 from tensornetwork.backends import backend_factory
 
-# from tensornetwork.linalg.node_linalg import conj
 from tensornetwork.matrixproductstates.utils import conj
 from typing import Any, List, Optional, Text, Type, Union, Dict, Sequence
 from tensornetwork.matrixproductstates.base_mps import BaseMPS

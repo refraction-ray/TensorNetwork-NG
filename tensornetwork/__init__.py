@@ -47,37 +47,6 @@ from tensornetwork.network_operations import (
 
 from tensornetwork.tensor import Tensor, NconBuilder
 
-# from tensornetwork.linalg.initialization import
-#  eye, ones, randn, random_uniform, zeros
-
-# from tensornetwork.linalg.linalg import norm,
-# qr, svd, rq, eigh, expm, inv
-
-# # pylint: disable=redefined-builtin
-# from tensornetwork.linalg.operations import (
-#     tensordot,
-#     reshape,
-#     transpose,
-#     take_slice,
-#     shape,
-#     sqrt,
-#     outer,
-#     einsum,
-#     conj,
-#     hconj,
-#     sin,
-#     cos,
-#     exp,
-#     log,
-#     diagonal,
-#     diagflat,
-#     trace,
-#     sign,
-#     abs,
-#     kron,
-#     pivot,
-# )
-
 from tensornetwork.backends.decorators import jit
 
 from tensornetwork.network_components import (

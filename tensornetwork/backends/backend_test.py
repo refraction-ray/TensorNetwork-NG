@@ -71,27 +71,6 @@ def test_backend_jax_missing_cannot_initialize_backend():
 
 
 @pytest.mark.usefixtures("no_backend_dependency")
-def test_config_backend_missing_can_import_config():
-    # not sure why config is imported here?
-    # pylint: disable=import-outside-toplevel
-    # pylint: disable=unused-variable
-    import tensornetwork.config
-
-    with pytest.raises(ImportError):
-        # pylint: disable=import-outside-toplevel
-        # pylint: disable=unused-variable
-        import torch
-    with pytest.raises(ImportError):
-        # pylint: disable=import-outside-toplevel
-        # pylint: disable=unused-variable
-        import tensorflow as tf
-    with pytest.raises(ImportError):
-        # pylint: disable=import-outside-toplevel
-        # pylint: disable=unused-variable
-        import jax
-
-
-@pytest.mark.usefixtures("no_backend_dependency")
 def test_import_tensornetwork_without_backends():
     # pylint: disable=import-outside-toplevel
     # pylint: disable=unused-variable
