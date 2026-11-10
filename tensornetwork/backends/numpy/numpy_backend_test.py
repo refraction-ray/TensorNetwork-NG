@@ -9,13 +9,39 @@ np_randn_dtypes = [np.float32, np.float16, np.float64]
 np_dtypes = np_randn_dtypes + [np.complex64, np.complex128]
 
 
-def test_tensordot():
+@pytest.mark.parametrize(
+    ("shape_a", "shape_b", "axes", "expected_axes"),
+    [
+        ((2, 3, 4), (2, 3, 4), ((1, 2), (1, 2)), ((1, 2), (1, 2))),
+        ((2, 3), (3, 2), ((-1, -2), (0, 1)), ((-1, -2), (0, 1))),
+        ((2, 3, 4), (4, 3, 2), ((2, -2), (0, 1)), ((2, 1), (0, 1))),
+    ],
+)
+def test_tensordot(shape_a, shape_b, axes, expected_axes):
     backend = numpy_backend.NumPyBackend()
-    a = backend.convert_to_tensor(2 * np.ones((2, 3, 4)))
-    b = backend.convert_to_tensor(np.ones((2, 3, 4)))
-    actual = backend.tensordot(a, b, ((1, 2), (1, 2)))
-    expected = np.array([[24.0, 24.0], [24.0, 24.0]])
+    a = backend.convert_to_tensor(2 * np.ones(shape_a))
+    b = backend.convert_to_tensor(np.ones(shape_b))
+    actual = backend.tensordot(a, b, axes)
+    expected = np.tensordot(a, b, expected_axes)
     np.testing.assert_allclose(expected, actual)
+
+
+@pytest.mark.parametrize(
+    "axes",
+    [
+        ((-3, 0), (-3, 0)),
+        ((-1, 1), (0, 1)),
+        ((0, 5), (0, 1)),
+        ((1, 1), (0, 1)),
+    ],
+)
+def test_tensordot_invalid_axes(axes):
+    backend = numpy_backend.NumPyBackend()
+    a = backend.convert_to_tensor(np.arange(4.0).reshape(2, 2))
+    with pytest.raises((ValueError, IndexError)):
+        backend.tensordot(a, a, axes)
+    with pytest.raises((ValueError, IndexError)):
+        np.tensordot(a, a, axes)
 
 
 def test_tensordot_int():

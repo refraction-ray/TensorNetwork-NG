@@ -40,6 +40,26 @@ class NumPyBackend(abstract_backend.AbstractBackend):
             if (len(axes[0]) == a.ndim) and (len(axes[1]) == b.ndim):
                 if not len(axes[0]) == len(axes[1]):
                     raise ValueError("shape-mismatch for sum")
+                for ax in axes[0]:
+                    if not -a.ndim <= ax < a.ndim:
+                        raise IndexError(
+                            f"axis {ax} is out of bounds for array of dimension "
+                            f"{a.ndim}"
+                        )
+                for bx in axes[1]:
+                    if not -b.ndim <= bx < b.ndim:
+                        raise IndexError(
+                            f"axis {bx} is out of bounds for array of dimension "
+                            f"{b.ndim}"
+                        )
+                axes = (
+                    [ax + a.ndim if ax < 0 else ax for ax in axes[0]],
+                    [ax + b.ndim if ax < 0 else ax for ax in axes[1]],
+                )
+                if len(set(axes[0])) != len(axes[0]) or len(set(axes[1])) != len(
+                    axes[1]
+                ):
+                    raise ValueError("duplicate axis in axes")
                 u, pos1, _ = np.intersect1d(
                     axes[0], axes[1], return_indices=True, assume_unique=True
                 )
