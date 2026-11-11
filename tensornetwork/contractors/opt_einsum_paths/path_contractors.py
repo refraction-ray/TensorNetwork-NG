@@ -363,15 +363,15 @@ def path_solver(
             alg = functools.partial(
                 opt_einsum.paths.dynamic_programming, memory_limit=memory_limit
             )
-        if n < 7:
+        elif n < 7:
             alg = functools.partial(
                 opt_einsum.paths.branch, memory_limit=memory_limit, nbranch=None
             )
-        if n < 9:
+        elif n < 9:
             alg = functools.partial(
                 opt_einsum.paths.branch, memory_limit=memory_limit, nbranch=2
             )
-        if n < 15:
+        elif n < 15:
             alg = functools.partial(
                 opt_einsum.paths.branch, memory_limit=memory_limit, nbranch=1
             )
