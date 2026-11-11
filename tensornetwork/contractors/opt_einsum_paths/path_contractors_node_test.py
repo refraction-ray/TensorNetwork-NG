@@ -217,6 +217,26 @@ def test_path_solver_optimal(backend):
     assert path == [(1, 3), (1, 2), (0, 1)]
 
 
+def test_path_solver_auto_avoids_underflowing_intermediate():
+    nodes = [
+        Node(np.full(shape, 2.0**exponent), backend="numpy")
+        for shape, exponent in [
+            ((1,), 600),
+            ((1, 2), -600),
+            ((2, 2), -600),
+            ((2,), 600),
+        ]
+    ]
+    for left, right in zip(nodes, nodes[1:]):
+        left[-1] ^ right[0]
+
+    path = path_contractors.path_solver(algorithm="auto", nodes=nodes)
+    result = path_contractors.contract_path(
+        path=path, nodes=nodes, output_edge_order=[]
+    ).tensor
+    assert float(result) == 4.0
+
+
 @pytest.mark.parametrize("algorithm", ["optimal", "branch", "greedy", "auto"])
 def test_contract_path(backend, algorithm):
     np.random.seed(10)
