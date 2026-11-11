@@ -248,6 +248,63 @@ def test_contract_path(backend, algorithm):
     assert nodes == [mps, mpsc, mpo, L]
 
 
+@pytest.mark.parametrize("algorithm", ["optimal", "branch", "greedy", "auto"])
+def test_contract_path_trace_edge(backend, algorithm):
+    a_tensor = np.arange(18.0).reshape(3, 3, 2)
+    b_tensor = np.arange(8.0).reshape(2, 4)
+    a = Node(a_tensor, backend=backend)
+    b = Node(b_tensor, backend=backend)
+    # pylint: disable=pointless-statement
+    a[0] ^ a[1]
+    a[2] ^ b[0]
+    nodes = [a, b]
+
+    path = path_contractors.path_solver(algorithm=algorithm, nodes=nodes)
+    res = path_contractors.contract_path(
+        path=path, nodes=nodes, output_edge_order=[b[1]]
+    )
+    expected = np.einsum("iiz,zy->y", a_tensor, b_tensor)
+    np.testing.assert_allclose(res.tensor, expected)
+    assert nodes == [a, b]
+
+
+@pytest.mark.parametrize("algorithm", ["optimal", "branch", "greedy", "auto"])
+def test_contract_path_single_node_trace_edge(backend, algorithm):
+    a_tensor = np.arange(18.0).reshape(3, 3, 2)
+    a = Node(a_tensor, backend=backend)
+    # pylint: disable=pointless-statement
+    a[0] ^ a[1]
+    nodes = [a]
+
+    path = path_contractors.path_solver(algorithm=algorithm, nodes=nodes)
+    res = path_contractors.contract_path(
+        path=path, nodes=nodes, output_edge_order=[a[2]]
+    )
+    expected = np.einsum("iij->j", a_tensor)
+    np.testing.assert_allclose(res.tensor, expected)
+    assert nodes == [a]
+
+
+@pytest.mark.parametrize("algorithm", ["greedy", "auto"])
+def test_contract_path_trace_accumulation(backend, algorithm):
+    nodes = [Node(np.ones((1, 1, 1, 1)), backend=backend) for _ in range(34)]
+    for i in range(34):
+        # pylint: disable=pointless-statement
+        nodes[i][0] ^ nodes[i][1]
+    for i in range(33):
+        # pylint: disable=pointless-statement
+        nodes[i][3] ^ nodes[i + 1][2]
+    order = [nodes[0][2], nodes[33][3]]
+    original_nodes = list(nodes)
+
+    path = path_contractors.path_solver(algorithm=algorithm, nodes=nodes)
+    res = path_contractors.contract_path(
+        path=path, nodes=nodes, output_edge_order=order
+    )
+    np.testing.assert_allclose(res.tensor, [[1.0]])
+    assert nodes == original_nodes
+
+
 def test_contract_path_raises(backend):
     np.random.seed(10)
     D, d, M = 100, 4, 10
@@ -266,3 +323,8 @@ def test_contract_path_raises(backend):
     nodes = [mps, mpsc, mpo, L]
     with pytest.raises(ValueError, match="algorithm"):
         _ = path_contractors.path_solver(algorithm="no-algorithm", nodes=nodes)
+    order = [mpo[1], mps[2], mpsc[2]]
+    with pytest.raises(ValueError, match="empty"):
+        _ = path_contractors.contract_path(
+            path=[], nodes=nodes, output_edge_order=order
+        )
