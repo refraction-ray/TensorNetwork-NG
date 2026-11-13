@@ -19,6 +19,13 @@ import numpy as np
 Tensor = Any
 
 
+def _prod(iterable):
+    result = 1
+    for dim in iterable:
+        result = result * dim
+    return result
+
+
 def svd(
     torch: Any,
     tensor: Tensor,
@@ -53,6 +60,27 @@ def svd(
     number of singular values that must be kept to maintain a truncation error
     smaller than `max_truncation_error`.
 
+    In the error-truncation mode (`max_truncation_error` set), the
+    number of retained singular values is derived from the data.
+    This mode is incompatible with `torch.func.vmap`. Full-graph
+    gradient compilation requires setting
+    `torch._dynamo.config.capture_scalar_outputs = True` and
+    torch >= 2.8, for losses that depend only on the singular
+    values.
+
+    In the fixed-count mode (`max_truncation_error = None` with an
+    explicit `max_singular_values`), the decomposition traces under
+    `torch.func.vmap`. Its gradients compile without extra
+    configuration since torch 2.4, for losses that depend only on
+    the singular values. On torch 2.1-2.3, they additionally
+    require `torch._dynamo.config.capture_func_transforms = True`.
+
+    For complex inputs, full-graph compilation of gradients of
+    losses using `u` or `vh` additionally requires torch >= 2.12,
+    in either mode. Both modes, and gradients of losses that
+    depend only on the singular values, work eagerly without any
+    compilation settings.
+
     The output consists of three tensors `u, s, vh` such that:
     ```python
       u[i1,...,iN, j] * s[j] * vh[j, k1,...,kM] == tensor[i1,...,iN, k1,...,kM]
@@ -80,8 +108,8 @@ def svd(
     left_dims = list(tensor.shape)[:pivot_axis]
     right_dims = list(tensor.shape)[pivot_axis:]
 
-    tensor = torch.reshape(tensor, (np.prod(left_dims), np.prod(right_dims)))
-    u, s, v = torch.svd(tensor)
+    tensor = torch.reshape(tensor, (_prod(left_dims), _prod(right_dims)))
+    u, s, vh = torch.linalg.svd(tensor, full_matrices=False)
 
     if max_singular_values is None:
         max_singular_values = s.nelement()
@@ -98,23 +126,27 @@ def svd(
             abs_max_truncation_error = max_truncation_error
         # We must keep at least this many singular values to ensure the
         # truncation error is <= abs_max_truncation_error.
-        num_sing_vals_err = torch.nonzero(
-            trunc_errs > abs_max_truncation_error
-        ).nelement()
-    else:
-        num_sing_vals_err = max_singular_values
+        num_sing_vals_keep = (
+            torch.sum(trunc_errs > abs_max_truncation_error)
+            .clamp(max=max_singular_values)
+            .clamp(max=s.nelement())
+            .item()
+        )
 
-    num_sing_vals_keep = min(max_singular_values, num_sing_vals_err)
+        check_fn = getattr(torch, "_check", None)
+        if check_fn is not None:
+            check_fn(num_sing_vals_keep >= 0)
+            check_fn(num_sing_vals_keep <= s.nelement())
+    else:
+        num_sing_vals_keep = min(max_singular_values, s.nelement())
 
     # we recast to the original dtype.
-    s = s.type(tensor.type())
+    s = s.to(tensor.dtype)
 
     s_rest = s[num_sing_vals_keep:]
     s = s[:num_sing_vals_keep]
     u = u[:, :num_sing_vals_keep]
-    v = v[:, :num_sing_vals_keep]
-
-    vh = torch.transpose(torch.conj(v), 0, 1)
+    vh = vh[:num_sing_vals_keep]
 
     dim_s = s.shape[0]
     u = torch.reshape(u, left_dims + [dim_s])
