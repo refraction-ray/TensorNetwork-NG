@@ -758,7 +758,7 @@ class JaxBackend(abstract_backend.AbstractBackend):
         if converged:
             info = 0
         else:
-            info = n_iter
+            info = n_iter + 1
         x = self.reshape(x, b.shape)
         return x, info
 
