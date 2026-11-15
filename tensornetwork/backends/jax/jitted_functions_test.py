@@ -173,7 +173,6 @@ def test_lanczos_factorization(dtype, ncv):
     )
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
 @pytest.mark.parametrize("dtype", jax_dtypes)
 def test_gmres_on_small_known_problem(dtype):
     """
@@ -200,7 +199,46 @@ def test_gmres_on_small_known_problem(dtype):
     np.testing.assert_allclose(x, solution, atol=tol)
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
+@pytest.mark.parametrize("dtype", jax_dtypes)
+def test_gmres_convergence_uses_true_residual(dtype):
+    """
+    GMRES must decide convergence from the true residual of the updated
+    solution rather than from the Givens-rotated estimate, and the returned
+    beta must be the residual norm of the returned solution.
+
+    On the ill-conditioned system A = [[1, 1], [1, 1.00001]] the rotated
+    estimate understates the true residual by about three orders of
+    magnitude in single precision, so an estimate-based convergence check
+    reports success with a residual far above the target.
+    """
+    dummy = jax.numpy.zeros(1, dtype=dtype)
+    dtype = dummy.dtype
+    gmres = jitted_functions.gmres_wrapper(jax)
+
+    A = jax.numpy.array([[1, 1], [1, 1.00001]], dtype=dtype)
+    b = jax.numpy.array([1, 0], dtype=dtype)
+    x0 = jax.numpy.zeros(2, dtype=dtype)
+    n_kry = 2
+    maxiter = 10
+    tol = 1e-5
+
+    @jax.tree_util.Partial
+    def A_mv(vector):
+        return A @ vector
+
+    x, beta, _, converged = gmres.gmres_m(
+        A_mv, [], b, x0, tol, tol, n_kry, maxiter, precision
+    )
+    converged = bool(converged)
+    beta = float(beta)
+    true_residual = float(jax.numpy.linalg.norm(b - A_mv(x)))
+    target = max(tol * float(jax.numpy.linalg.norm(b)), tol)
+    # A reported success must correspond to a true residual within target.
+    assert not converged or true_residual <= target
+    # The returned beta is the residual norm at termination.
+    np.testing.assert_allclose(beta, true_residual, rtol=1e-6)
+
+
 @pytest.mark.parametrize("dtype", jax_dtypes)
 def test_gmres_krylov(dtype):
     """
@@ -225,9 +263,7 @@ def test_gmres_krylov(dtype):
     x0 = jax.numpy.array(np.random.rand(n).astype(dtype))
     b = jax.numpy.array(np.random.rand(n), dtype=dtype)
     r, beta = gmres.gmres_residual(A_mv, [], b, x0)
-    _, V, R, _ = gmres.gmres_krylov(
-        A_mv, [], n_kry, x0, r, beta, tol, jax.numpy.linalg.norm(b), precision
-    )
+    _, V, R, _ = gmres.gmres_krylov(A_mv, [], n_kry, x0, r, beta, tol, precision)
     phases = jax.numpy.sign(jax.numpy.diagonal(R[:-1, :]))
     R = phases.conj()[:, None] * R[:-1, :]
     Vtest = np.zeros((n, n_kry + 1), dtype=x0.dtype)
@@ -235,7 +271,7 @@ def test_gmres_krylov(dtype):
     Vtest = jax.numpy.array(Vtest)
     Htest = jax.numpy.zeros((n_kry + 1, n_kry), dtype=x0.dtype)
     for k in range(n_kry):
-        Vtest, Htest = gmres.kth_arnoldi_step(k, A_mv, [], Vtest, Htest, tol, precision)
+        Vtest, Htest = gmres.kth_arnoldi_step(k, A_mv, [], Vtest, Htest, precision)
     _, Rtest = jax.numpy.linalg.qr(Htest)
     phases = jax.numpy.sign(jax.numpy.diagonal(Rtest))
     Rtest = phases.conj()[:, None] * Rtest
@@ -243,7 +279,6 @@ def test_gmres_krylov(dtype):
     np.testing.assert_allclose(R, Rtest, atol=tol)
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
 @pytest.mark.parametrize("dtype", jax_dtypes)
 def test_gmres_arnoldi_step(dtype):
     """
@@ -268,26 +303,35 @@ def test_gmres_arnoldi_step(dtype):
         return A @ x
 
     for k in range(n_kry):
-        Q, H = gmres.kth_arnoldi_step(k, A_mv, [], Q, H, tol, precision)
+        Q, H = gmres.kth_arnoldi_step(k, A_mv, [], Q, H, precision)
     QAQ = Q[:, :n_kry].conj().T @ A @ Q[:, :n_kry]
     np.testing.assert_allclose(H[:n_kry, :], QAQ, atol=tol)
 
 
+@pytest.mark.parametrize(
+    "zero_mask", [(False, False), (True, False), (False, True), (True, True)]
+)
 @pytest.mark.parametrize("dtype", jax_dtypes)
-def test_givens(dtype):
+def test_givens(dtype, zero_mask):
     """
     gmres["givens_rotation produces the correct rotation factors.
     """
     gmres = jitted_functions.gmres_wrapper(jax)
     np.random.seed(10)
-    v = jax.numpy.array(np.random.rand(2).astype(dtype))
+    if np.issubdtype(dtype, np.complexfloating):
+        v = np.random.rand(2) + 1.0j * np.random.rand(2)
+    else:
+        v = np.random.rand(2)
+    v[np.array(zero_mask)] = 0
+    v = jax.numpy.array(v.astype(dtype))
     cs, sn = gmres.givens_rotation(*v)
     rot = np.zeros((2, 2), dtype=dtype)
     rot[0, 0] = cs
-    rot[1, 1] = cs
+    rot[1, 1] = np.conj(cs)
     rot[0, 1] = -sn
-    rot[1, 0] = sn
+    rot[1, 0] = np.conj(sn)
     rot = jax.numpy.array(rot)
     result = rot @ v
     tol = 4 * jax.numpy.finfo(dtype).eps
     np.testing.assert_allclose(result[-1], 0.0, atol=tol)
+    np.testing.assert_allclose(np.abs(cs) ** 2 + np.abs(sn) ** 2, 1.0, atol=tol)

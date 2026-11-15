@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
+
 import tensorflow as tf
 import numpy as np
 import scipy as sp
@@ -28,6 +30,18 @@ np_randn_dtypes = [np.float32, np.float16, np.float64]
 np_dtypes = np_randn_dtypes + [np.complex64, np.complex128]
 np_not_half = [np.float32, np.float64, np.complex64, np.complex128]
 np_not_half_r = [np.float32, np.float64]
+
+
+@functools.lru_cache(maxsize=1)
+def _float16_triangular_solve_supported() -> bool:
+    """Whether this XLA build supports a float16 triangular solve."""
+    a = jax.numpy.eye(2, dtype=jax.numpy.float16)
+    b = jax.numpy.ones(2, dtype=jax.numpy.float16)
+    try:
+        jax.scipy.linalg.solve_triangular(a, b)
+    except RuntimeError:
+        return False
+    return True
 
 
 def test_tensordot():
@@ -1162,31 +1176,138 @@ def test_gmres_raises():
         backend.gmres(dummy_mv, b, A_kwargs=A_kwargs)
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
-@pytest.mark.parametrize("dtype", np_dtypes)
-def test_gmres_on_small_known_problem(dtype):
-    dummy = jax.numpy.zeros(1, dtype=dtype)
-    dtype = dummy.dtype
-
+@pytest.mark.parametrize(
+    "dtype, matrix, solution, initial_guess, solver_kwargs, solution_atol",
+    [
+        pytest.param(
+            dtype,
+            [[1, 1], [3, -4]],
+            [2.0, 1.0],
+            [1.0, 1.0],
+            {"tol": 100 * np.finfo(dtype).eps, "num_krylov_vectors": 2},
+            100 * np.finfo(dtype).eps,
+            id=f"known-{np.dtype(dtype).name}",
+        )
+        for dtype in np_dtypes
+    ]
+    + [
+        pytest.param(
+            dtype,
+            [[2 + 1j, 1 - 0.5j], [0.5j, 3 - 2j]],
+            [1 + 2j, -1 + 0.5j],
+            [0.0, 0.0],
+            {
+                "tol": 10 * np.finfo(dtype).eps,
+                "atol": 10 * np.finfo(dtype).eps,
+                "num_krylov_vectors": 2,
+            },
+            1.0e-6,
+            id=f"complex-{np.dtype(dtype).name}",
+        )
+        for dtype in [np.complex64, np.complex128]
+    ]
+    + [
+        pytest.param(
+            dtype,
+            np.diag([1.0e-3, 2.0e-3, 3.0e-3]),
+            [0.1, 0.05, 1.0 / 30.0],
+            [0.0, 0.0, 0.0],
+            {},
+            1.0e-6,
+            id=f"small-scale-{np.dtype(dtype).name}",
+        )
+        for dtype in np_not_half
+    ]
+    + [
+        pytest.param(
+            dtype,
+            np.eye(2),
+            [0.0, 0.0],
+            [1.0, 2.0],
+            {},
+            1.0e-6,
+            id=f"zero-rhs-{np.dtype(dtype).name}",
+        )
+        for dtype in np_not_half
+    ]
+    + [
+        pytest.param(
+            dtype,
+            np.eye(2),
+            [0.0, 0.0],
+            [1.0e-4, 0.0],
+            {"tol": 1.0e-3, "atol": 1.0e-10},
+            1.0e-10,
+            id=f"zero-rhs-explicit-atol-{np.dtype(dtype).name}",
+        )
+        for dtype in np_not_half
+    ]
+    + [
+        pytest.param(
+            dtype,
+            np.diag([1.0, 1.001, 1.002]),
+            1.0 / np.array([1.0, 1.001, 1.002]),
+            [0.0, 0.0, 0.0],
+            {"tol": 1.0e-5, "num_krylov_vectors": 1, "maxiter": 10},
+            1.0e-5,
+            id=f"restarted-{np.dtype(dtype).name}",
+        )
+        for dtype in np_not_half
+    ],
+)
+def test_gmres_on_small_known_problem(
+    dtype, matrix, solution, initial_guess, solver_kwargs, solution_atol
+):
+    if dtype == np.float16 and not _float16_triangular_solve_supported():
+        pytest.xfail("jax triangular solve does not support float16")
     backend = jax_backend.JaxBackend()
-    A = jax.numpy.array(([[1, 1], [3, -4]]), dtype=dtype)
-    b = jax.numpy.array([3, 2], dtype=dtype)
-    x0 = jax.numpy.ones(2, dtype=dtype)
-    n_kry = 2
+    A = jax.numpy.array(matrix, dtype=dtype)
+    solution = jax.numpy.array(solution, dtype=dtype)
+    b = A @ solution
+    x0 = jax.numpy.array(initial_guess, dtype=dtype)
 
     def A_mv(x):
         return A @ x
 
-    tol = 100 * jax.numpy.finfo(dtype).eps
-    x, _ = backend.gmres(A_mv, b, x0=x0, num_krylov_vectors=n_kry, tol=tol)
-    solution = jax.numpy.array([2.0, 1.0], dtype=dtype)
-    eps = jax.numpy.linalg.norm(jax.numpy.abs(solution) - jax.numpy.abs(x))
-    assert eps < tol
+    x, info = backend.gmres(A_mv, b, x0=x0, **solver_kwargs)
+    tol = solver_kwargs.get("tol", 1.0e-5)
+    atol = solver_kwargs.get("atol", tol)
+    residual_norm = np.linalg.norm(np.asarray(A_mv(x) - b))
+    target = max(tol * np.linalg.norm(np.asarray(b)), atol)
+    assert info == 0
+    assert residual_norm <= target
+    np.testing.assert_allclose(x, solution, atol=solution_atol)
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
+@pytest.mark.parametrize(
+    "solver_kwargs, expected_info",
+    [({}, 1), ({"maxiter": 40}, 40)],
+    ids=["default-maxiter", "restarted"],
+)
+def test_gmres_nonconvergence_info(solver_kwargs, expected_info):
+    backend = jax_backend.JaxBackend()
+    A = jax.numpy.array([[0.0, -1.0], [1.0, 0.0]], dtype=jax.numpy.float64)
+    b = jax.numpy.array([1.0, 0.0], dtype=jax.numpy.float64)
+
+    def A_mv(x):
+        return A @ x
+
+    x, info = backend.gmres(
+        A_mv,
+        b,
+        x0=jax.numpy.zeros_like(b),
+        num_krylov_vectors=1,
+        **solver_kwargs,
+    )
+    assert np.linalg.norm(np.asarray(A_mv(x) - b)) > 1.0e-5
+    assert info > 0
+    assert info == expected_info
+
+
 @pytest.mark.parametrize("dtype", np_dtypes)
 def test_gmres_with_args(dtype):
+    if dtype == np.float16 and not _float16_triangular_solve_supported():
+        pytest.xfail("jax triangular solve does not support float16")
     dummy = jax.numpy.zeros(1, dtype=dtype)
     dtype = dummy.dtype
 
@@ -1210,9 +1331,10 @@ def test_gmres_with_args(dtype):
     assert eps < tol
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
 @pytest.mark.parametrize("dtype", np_dtypes)
 def test_gmres_on_larger_random_problem(dtype):
+    if dtype == np.float16 and not _float16_triangular_solve_supported():
+        pytest.xfail("jax triangular solve does not support float16")
     dummy = jax.numpy.zeros(1, dtype=dtype)
     dtype = dummy.dtype
     backend = jax_backend.JaxBackend()
@@ -1233,9 +1355,10 @@ def test_gmres_on_larger_random_problem(dtype):
     assert err < max(rtol, atol)
 
 
-@pytest.mark.xfail(reason="jax gmres nan issue to be checked")
 @pytest.mark.parametrize("dtype", np_dtypes)
 def test_gmres_not_matrix(dtype):
+    if dtype == np.float16 and not _float16_triangular_solve_supported():
+        pytest.xfail("jax triangular solve does not support float16")
     dummy = jax.numpy.zeros(1, dtype=dtype)
     dtype = dummy.dtype
     backend = jax_backend.JaxBackend()
