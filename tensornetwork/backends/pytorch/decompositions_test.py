@@ -14,6 +14,7 @@
 
 import math
 import numpy as np
+import pytest
 import torch
 from tensornetwork.backends.pytorch import decompositions
 
@@ -39,6 +40,59 @@ def test_svd_complex_reconstruction_gradient():
         return torch.real((u * s).mm(vh)).square().sum()
 
     assert torch.autograd.gradcheck(loss, (val,))
+
+
+@pytest.mark.parametrize(
+    "shape, pivot_axis, dynamic", [((6, 4), 1, False), ((2, 3, 4), 2, True)]
+)
+def test_svd_compile_grad_singular_values(shape, pivot_axis, dynamic):
+    torch.manual_seed(42)
+    val = torch.randn(*shape, dtype=torch.complex128)
+
+    def loss(matrix):
+        _, s, _, _ = decompositions.svd(
+            torch, matrix, pivot_axis, max_singular_values=3
+        )
+        return (s**2).sum().real
+
+    expected = torch.func.grad(loss)(val)
+    actual = torch.compile(
+        torch.func.grad(loss), backend="eager", dynamic=dynamic, fullgraph=True
+    )(val)
+    np.testing.assert_allclose(actual, expected, rtol=1e-6, atol=1e-8)
+
+
+def test_svd_vmap_grad_singular_values():
+    torch.manual_seed(43)
+    val = torch.randn(3, 6, 4, dtype=torch.complex128)
+
+    def loss(matrix):
+        _, s, _, _ = decompositions.svd(torch, matrix, 1, max_singular_values=3)
+        return (s**2).sum().real
+
+    actual = torch.func.vmap(torch.func.grad(loss))(val)
+    expected = torch.func.grad(loss)(val[1])
+    np.testing.assert_allclose(actual[1], expected, rtol=1e-6, atol=1e-8)
+
+
+def test_svd_compile_grad_truncation_error():
+    torch.manual_seed(44)
+    val = torch.randn(6, 4, dtype=torch.complex128)
+
+    def loss(matrix):
+        _, s, _, _ = decompositions.svd(torch, matrix, 1, max_truncation_error=2.0)
+        return (s**2).sum().real
+
+    expected = torch.func.grad(loss)(val)
+    previous = torch._dynamo.config.capture_scalar_outputs
+    torch._dynamo.config.capture_scalar_outputs = True
+    try:
+        actual = torch.compile(torch.func.grad(loss), backend="eager", fullgraph=True)(
+            val
+        )
+    finally:
+        torch._dynamo.config.capture_scalar_outputs = previous
+    np.testing.assert_allclose(actual, expected, rtol=1e-6, atol=1e-8)
 
 
 def test_expected_shapes_qr():
