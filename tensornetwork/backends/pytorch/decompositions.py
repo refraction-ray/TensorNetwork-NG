@@ -19,6 +19,13 @@ import numpy as np
 Tensor = Any
 
 
+def _prod(iterable):
+    result = 1
+    for dim in iterable:
+        result = result * dim
+    return result
+
+
 def svd(
     torch: Any,
     tensor: Tensor,
@@ -80,7 +87,7 @@ def svd(
     left_dims = list(tensor.shape)[:pivot_axis]
     right_dims = list(tensor.shape)[pivot_axis:]
 
-    tensor = torch.reshape(tensor, (np.prod(left_dims), np.prod(right_dims)))
+    tensor = torch.reshape(tensor, (_prod(left_dims), _prod(right_dims)))
     u, s, v = torch.svd(tensor)
 
     if max_singular_values is None:
@@ -107,7 +114,7 @@ def svd(
     num_sing_vals_keep = min(max_singular_values, num_sing_vals_err)
 
     # we recast to the original dtype.
-    s = s.type(tensor.type())
+    s = s.to(tensor.dtype)
 
     s_rest = s[num_sing_vals_keep:]
     s = s[:num_sing_vals_keep]
