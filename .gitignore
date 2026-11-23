@@ -43,3 +43,6 @@ coverage.xml
 
 # Local test logs
 test_errors.md
+
+# Local agent instructions
+/AGENTS.local.md
