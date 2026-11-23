@@ -456,6 +456,20 @@ def test_flatten_edges_between(backend):
     np.testing.assert_allclose(b.tensor, np.ones((60,)))
 
 
+def test_flatten_edges_between_orders_parallel_edges_by_axis(backend):
+    # Parallel edges come from a set; whatever its iteration order, the
+    # flattened axis must combine them in node1's axis order.
+    data = np.arange(2 * 3 * 4, dtype=np.float64).reshape((2, 3, 4))
+    for _ in range(8):
+        a = tn.Node(data, backend=backend)
+        b = tn.Node(np.ones((4, 3)), backend=backend)
+        tn.connect(a[1], b[1])
+        tn.connect(a[2], b[0])
+        tn.flatten_edges_between(a, b)
+        tn.check_correct({a, b})
+        np.testing.assert_allclose(a.tensor, data.reshape((2, 12)))
+
+
 def test_flatten_edges_between_no_edges(backend):
     a = tn.Node(np.ones((3)), backend=backend)
     b = tn.Node(np.ones((3)), backend=backend)
