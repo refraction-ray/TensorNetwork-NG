@@ -1587,7 +1587,14 @@ def flatten_edges_between(
     """
     shared_edges = get_shared_edges(node1, node2)
     if shared_edges:
-        return flatten_edges(list(shared_edges))
+        # A set iterates in hash order, which changes from call to call. Order
+        # the edges by their axis on node1 so the flattening permutation is
+        # deterministic; backends that compile a kernel per permutation would
+        # otherwise compile again for the same network.
+        def axis_on_node1(edge: Edge) -> int:
+            return edge.axis1 if edge.node1 is node1 else edge.axis2
+
+        return flatten_edges(sorted(shared_edges, key=axis_on_node1))
     return None
 
 
