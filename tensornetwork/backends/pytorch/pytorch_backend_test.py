@@ -86,10 +86,30 @@ def test_slice_raises_error():
 def test_shape_tensor():
     backend = pytorch_backend.PyTorchBackend()
     a = backend.convert_to_tensor(np.ones([2, 3, 4]))
-    assert isinstance(backend.shape_tensor(a), torch.Tensor)
+    assert isinstance(backend.shape_tensor(a), tuple)
     actual = backend.shape_tensor(a)
     expected = np.array([2, 3, 4])
     np.testing.assert_allclose(expected, actual)
+
+
+def test_shape_tensor_stays_on_host_under_default_device():
+    backend = pytorch_backend.PyTorchBackend()
+    a = backend.convert_to_tensor(np.ones([2, 3, 4]))
+    with torch.device("meta"):
+        shape = backend.shape_tensor(a)
+        assert backend.shape_prod(shape[1:]) == 12
+
+
+def test_shape_helpers_inside_functorch_grad():
+    backend = pytorch_backend.PyTorchBackend()
+
+    def loss(x):
+        shape = backend.shape_tensor(x)
+        flat = backend.reshape(x, [backend.shape_prod(shape)])
+        return (flat * flat).sum()
+
+    x = torch.arange(6, dtype=torch.float64).reshape(2, 3)
+    np.testing.assert_allclose(torch.func.grad(loss)(x), 2 * x)
 
 
 def test_shape_tuple():
