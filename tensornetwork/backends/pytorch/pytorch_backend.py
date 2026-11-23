@@ -103,11 +103,12 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         return np.concatenate(values, axis)
 
     def shape_tensor(self, tensor: Tensor) -> Tensor:
-        # Shape metadata as a NumPy vector, as the NumPy and JAX backends do.
-        # A torch tensor follows `torch.set_default_device("cuda")` and is
+        # Return `torch.Size` (a `tuple` subclass), matching the NumPy and JAX
+        # backends without allocating a tensor or ndarray. Returning a
+        # `torch.Tensor` follows `torch.set_default_device("cuda")` and is
         # wrapped without storage inside `torch.func` transforms; both make
         # the `np.array` in `shape_prod`/`reshape` fail.
-        return np.array(list(tensor.shape))
+        return tensor.shape
 
     def shape_tuple(self, tensor: Tensor) -> Tuple[Optional[int], ...]:
         return tuple(tensor.shape)

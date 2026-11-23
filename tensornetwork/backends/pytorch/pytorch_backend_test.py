@@ -86,6 +86,7 @@ def test_slice_raises_error():
 def test_shape_tensor():
     backend = pytorch_backend.PyTorchBackend()
     a = backend.convert_to_tensor(np.ones([2, 3, 4]))
+    assert isinstance(backend.shape_tensor(a), tuple)
     actual = backend.shape_tensor(a)
     expected = np.array([2, 3, 4])
     np.testing.assert_allclose(expected, actual)
