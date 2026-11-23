@@ -103,7 +103,11 @@ class PyTorchBackend(abstract_backend.AbstractBackend):
         return np.concatenate(values, axis)
 
     def shape_tensor(self, tensor: Tensor) -> Tensor:
-        return torchlib.tensor(list(tensor.shape))
+        # Shape metadata as a NumPy vector, as the NumPy and JAX backends do.
+        # A torch tensor follows `torch.set_default_device("cuda")` and is
+        # wrapped without storage inside `torch.func` transforms; both make
+        # the `np.array` in `shape_prod`/`reshape` fail.
+        return np.array(list(tensor.shape))
 
     def shape_tuple(self, tensor: Tensor) -> Tuple[Optional[int], ...]:
         return tuple(tensor.shape)
